@@ -127,6 +127,11 @@ byte velocityPWM_Pin = 36;      // Velocity (MPH speed) PWM pin
 #include <Wire.h>
 #include "BNO08x_AOG.h"
 
+//roll moyenne flottante
+#include "RunningAverage.h"
+RunningAverage myRA(7);
+int samples = 0;
+
 //Used to set CPU speed
 extern "C" uint32_t set_arm_clock(uint32_t frequency); // required prototype
 
@@ -156,6 +161,8 @@ double baseline = 0;
 double rollDual = 0;
 double relPosD = 0;
 double heading = 0;
+
+float avg = 0;
 
 byte ackPacket[72] = {0xB5, 0x62, 0x01, 0x3C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
@@ -267,6 +274,8 @@ void setup()
   Serial.println("\r\nStarting IMU...");
   //test if CMPS working
   uint8_t error;
+	
+  myRA.clear(); // explicitly start clean
 
   ImuWire.begin();
   
