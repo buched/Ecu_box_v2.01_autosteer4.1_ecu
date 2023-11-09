@@ -67,7 +67,7 @@ const bool invertRoll= true;  //Used for IMU with dual antenna
 uint32_t READ_BNO_TIME = 0;   //Used stop BNO data pile up (This version is without resetting BNO everytime)
 
 //Status LED's
-//#define GGAReceivedLED 13         //Teensy onboard LED
+#define GGAReceivedLED 13         //Teensy onboard LED
 //#define Power_on_LED 5            //Red
 //#define Ethernet_Active_LED      //Green
 //#define GPSRED_LED 9              //Red (Flashing = NO IMU or Dual, ON = GPS fix with IMU)
@@ -232,13 +232,13 @@ void setup()
     //Serial.print("CPU speed set to: ");
     //Serial.println(F_CPU_ACTUAL);
 
-  //pinMode(GGAReceivedLED, OUTPUT);
+  pinMode(GGAReceivedLED, OUTPUT);
   //pinMode(Power_on_LED, OUTPUT);
   //pinMode(Ethernet_Active_LED, OUTPUT);
   //pinMode(GPSRED_LED, OUTPUT);
   //pinMode(GPSGREEN_LED, OUTPUT);
   //pinMode(AUTOSTEER_STANDBY_LED, OUTPUT);
-  //(AUTOSTEER_ACTIVE_LED, OUTPUT);
+  //pinMode(AUTOSTEER_ACTIVE_LED, OUTPUT);
 
   // the dash means wildcard
   parser.setErrorHandler(errorHandler);
