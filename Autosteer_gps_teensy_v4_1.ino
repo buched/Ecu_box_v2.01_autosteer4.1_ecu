@@ -128,9 +128,9 @@ byte velocityPWM_Pin = 36;      // Velocity (MPH speed) PWM pin
 #include "BNO08x_AOG.h"
 
 //roll moyenne flottante
-#include "RunningAverage.h"
-RunningAverage myRA(7);
-int samples = 0;
+//#include "RunningAverage.h"
+//RunningAverage myRA(7);
+//int samples = 0;
 
 //Used to set CPU speed
 extern "C" uint32_t set_arm_clock(uint32_t frequency); // required prototype
@@ -275,7 +275,7 @@ void setup()
   //test if CMPS working
   uint8_t error;
 	
-  myRA.clear(); // explicitly start clean
+  //myRA.clear(); // explicitly start clean
 
   ImuWire.begin();
   
