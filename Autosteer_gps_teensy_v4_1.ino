@@ -30,7 +30,7 @@
 #define SerialAOG Serial                //AgIO USB conection
 #define SerialRTK Serial7               //RTK radio
 HardwareSerial* SerialGPS = &Serial3;   //Main postion receiver (GGA) (Serial2 must be used here with T4.0 / Basic Panda boards - Should auto swap)
-HardwareSerial* SerialGPS2 = &Serial2;  //Dual heading receiver 
+HardwareSerial* SerialGPS2 = &Serial8;  //Dual heading receiver 
 HardwareSerial* SerialGPSTmp = NULL;
 //HardwareSerial* SerialAOG = &Serial;
 
