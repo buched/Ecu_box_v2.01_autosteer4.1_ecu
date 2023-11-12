@@ -77,7 +77,7 @@ void GGA_Handler() //Rec'd GGA
        dualReadyGGA = true;
     }
 
-    if (useBNO08x)
+    if (useBNO08x || useCMPS)
     {
        imuHandler();          //Get IMU data ready
        BuildNmea();           //Build & send data GPS data to AgIO (Both Dual & Single)
@@ -88,7 +88,7 @@ void GGA_Handler() //Rec'd GGA
         //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF     
        }
     }
-    else if (!useBNO08x && !useDual) 
+    else if (!useBNO08x && !useCMPS && !useDual) 
     {
         //digitalWrite(GPSRED_LED, blink);   //Flash red GPS LED, we have GGA but no IMU or dual
         //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF
@@ -176,6 +176,47 @@ void imuHandler()
     int16_t temp = 0;
     if (!useDual)
     {
+        if (useCMPS)
+        {
+            //the heading x10
+            Wire.beginTransmission(CMPS14_ADDRESS);
+            Wire.write(0x1C);
+            Wire.endTransmission();
+
+            Wire.requestFrom(CMPS14_ADDRESS, 3);
+            while (Wire.available() < 3);
+
+            roll = int16_t(Wire.read() << 8 | Wire.read());
+            if (invertRoll)
+            {
+                roll *= -1;
+            }
+
+            // the heading x10
+            Wire.beginTransmission(CMPS14_ADDRESS);
+            Wire.write(0x02);
+            Wire.endTransmission();
+
+            Wire.requestFrom(CMPS14_ADDRESS, 3);
+            while (Wire.available() < 3);
+
+            temp = Wire.read() << 8 | Wire.read();
+            correctionHeading = temp * 0.1;
+            correctionHeading = correctionHeading * DEG_TO_RAD;
+            itoa(temp, imuHeading, 10);
+
+            // 3rd byte pitch
+            int8_t pitch = Wire.read();
+            itoa(pitch, imuPitch, 10);
+
+            // the roll x10
+            temp = (int16_t)roll;
+            itoa(temp, imuRoll, 10);
+
+            // YawRate - 0 for now
+            itoa(0, imuYawRate, 10);
+        }
+
         if (useBNO08x)
         {
             //BNO is reading in its own timer    
@@ -200,7 +241,7 @@ void imuHandler()
     if (useDual)
     {
         // We have a IMU so apply the dual/IMU roll/heading error to the IMU data.
-//        if (useBNO08x)
+//        if (useCMPS || useBNO08x)
 //        {
 //            float dualTemp;   //To convert IMU data (x10) to a float for the PAOGI so we have the decamal point
 //                     

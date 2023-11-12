@@ -206,8 +206,8 @@ void autosteerSetup()
   pinMode(PRESSURE_SENSOR_PIN, INPUT_DISABLE);
 
   //set up communication
-  Wire.end();
-  Wire.begin();
+  Wire1.end();
+  Wire1.begin();
     
   // Check ADC 
   if(adc.testConnection())
@@ -712,7 +712,7 @@ void ReceiveUdp()
 
                 SendUdp(helloFromAutoSteer, sizeof(helloFromAutoSteer), Eth_ipDestination, portDestination);
                 }
-                if(useBNO08x)
+                if(useBNO08x || useCMPS)
                 {
                  SendUdp(helloFromIMU, sizeof(helloFromIMU), Eth_ipDestination, portDestination); 
                 }

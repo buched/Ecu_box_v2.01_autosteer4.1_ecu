@@ -28,6 +28,7 @@
 /************************* User Settings *************************/
 // Serial Ports
 #define SerialAOG Serial                //AgIO USB conection
+#define SerialRTK Serial7               //RTK radio
 HardwareSerial* SerialGPS = &Serial3;   //Main postion receiver (GGA) (Serial2 must be used here with T4.0 / Basic Panda boards - Should auto swap)
 HardwareSerial* SerialGPS2 = &Serial8;  //Dual heading receiver 
 HardwareSerial* SerialGPSTmp = NULL;
@@ -35,6 +36,7 @@ HardwareSerial* SerialGPSTmp = NULL;
 
 const int32_t baudAOG = 115200;
 const int32_t baudGPS = 460800;
+const int32_t baudRTK = 9600;     // most are using Xbee radios with default of 115200
 
 // Baudrates for detecting UBX receiver
 uint32_t baudrates[]
@@ -66,7 +68,21 @@ uint32_t READ_BNO_TIME = 0;   //Used stop BNO data pile up (This version is with
 
 //Status LED's
 #define GGAReceivedLED 13         //Teensy onboard LED
+//#define Power_on_LED 5            //Red
+//#define Ethernet_Active_LED 6     //Green
+//#define GPSRED_LED 9              //Red (Flashing = NO IMU or Dual, ON = GPS fix with IMU)
+//#define GPSGREEN_LED 10           //Green (Flashing = Dual bad, ON = Dual good)
+//#define AUTOSTEER_STANDBY_LED 11  //Red
+//#define AUTOSTEER_ACTIVE_LED 12   //Green
 uint32_t gpsReadyTime = 0;        //Used for GGA timeout
+
+//for v2.2
+// #define Power_on_LED 22
+// #define Ethernet_Active_LED 23
+// #define GPSRED_LED 20
+// #define GPSGREEN_LED 21
+// #define AUTOSTEER_STANDBY_LED 38
+// #define AUTOSTEER_ACTIVE_LED 39
 
 /*****************************************************************/
 
@@ -118,7 +134,12 @@ bool useDual = false;
 bool dualReadyGGA = false;
 bool dualReadyRelPos = false;
 
+// booleans to see if we are using CMPS or BNO08x
+bool useCMPS = false;
 bool useBNO08x = false;
+
+//CMPS always x60
+#define CMPS14_ADDRESS 0x60
 
 // BNO08x address variables to check where it is
 const uint8_t bno08xAddresses[] = { 0x4A, 0x4B };
@@ -143,6 +164,8 @@ uint8_t GPSrxbuffer[serial_buffer_size];    //Extra serial rx buffer
 uint8_t GPStxbuffer[serial_buffer_size];    //Extra serial tx buffer
 uint8_t GPS2rxbuffer[serial_buffer_size];   //Extra serial rx buffer
 uint8_t GPS2txbuffer[serial_buffer_size];   //Extra serial tx buffer
+uint8_t RTKrxbuffer[serial_buffer_size];    //Extra serial rx buffer
+
 /* A parser is declared with 3 handlers at most */
 NMEAParser<2> parser;
 
@@ -203,6 +226,13 @@ void setup()
     //Serial.println(F_CPU_ACTUAL);
 
   pinMode(GGAReceivedLED, OUTPUT);
+//  pinMode(Power_on_LED, OUTPUT);
+//  pinMode(Ethernet_Active_LED, OUTPUT);
+//  pinMode(GPSRED_LED, OUTPUT);
+//  pinMode(GPSGREEN_LED, OUTPUT);
+//  pinMode(AUTOSTEER_STANDBY_LED, OUTPUT);
+//  pinMode(AUTOSTEER_ACTIVE_LED, OUTPUT);
+
   // the dash means wildcard
   parser.setErrorHandler(errorHandler);
   parser.addHandler("G-GGA", GGA_Handler);
@@ -218,11 +248,15 @@ void setup()
   SerialGPS->addMemoryForWrite(GPStxbuffer, serial_buffer_size);
 
   delay(10);
+  SerialRTK.begin(baudRTK);
+  SerialRTK.addMemoryForRead(RTKrxbuffer, serial_buffer_size);
+
+  delay(10);
   SerialGPS2->begin(baudGPS);
   SerialGPS2->addMemoryForRead(GPS2rxbuffer, serial_buffer_size);
   SerialGPS2->addMemoryForWrite(GPS2txbuffer, serial_buffer_size);
 
-  Serial.println("SerialAOG, SerialGPS and SerialGPS2 initialized");
+  Serial.println("SerialAOG, SerialRTK, SerialGPS and SerialGPS2 initialized");
 
   Serial.println("\r\nStarting AutoSteer...");
   autosteerSetup();
@@ -231,11 +265,31 @@ void setup()
   EthernetStart();
 
   Serial.println("\r\nStarting IMU...");
+  //test if CMPS working
   uint8_t error;
 
   ImuWire.begin();
   
+  //Serial.println("Checking for CMPS14");
+  ImuWire.beginTransmission(CMPS14_ADDRESS);
+  error = ImuWire.endTransmission();
 
+  if (error == 0)
+  {
+    //Serial.println("Error = 0");
+    Serial.print("CMPS14 ADDRESs: 0x");
+    Serial.println(CMPS14_ADDRESS, HEX);
+    Serial.println("CMPS14 Ok.");
+    useCMPS = true;
+  }
+  else
+  {
+    //Serial.println("Error = 4");
+    Serial.println("CMPS not Connected or Found");
+  }
+
+  if (!useCMPS)
+  {
       for (int16_t i = 0; i < nrBNO08xAdresses; i++)
       {
           bno08xAddress = bno08xAddresses[i];
@@ -278,8 +332,11 @@ void setup()
           }
           if (useBNO08x) break;
       }
+  }
 
   delay(100);
+  Serial.print("\r\nuseCMPS = ");
+  Serial.println(useCMPS);
   Serial.print("useBNO08x = ");
   Serial.println(useBNO08x);
 
@@ -526,6 +583,12 @@ void loop()
     }
 
     udpNtrip();
+
+    // Check for RTK Radio
+    if (SerialRTK.available())
+    {
+        SerialGPS->write(SerialRTK.read());
+    }
 
     // If both dual messages are ready, send to AgOpen
     if (dualReadyGGA == true && dualReadyRelPos == true)
