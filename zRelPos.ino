@@ -61,7 +61,7 @@ void relPosDecode() {
 
     //if (carrSoln == 2)
     //{
-    //    if (useBNO08x || useCMPS)
+    //    if (useBNO08x)
     //    {
     //        if (baseLineCheck)
     //        {
