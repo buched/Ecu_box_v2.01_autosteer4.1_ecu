@@ -60,14 +60,14 @@ void GGA_Handler() //Rec'd GGA
     // time of last DGPS update
     parser.getArg(12, ageDGPS);
 
-    if (blink)
-    {
-        digitalWrite(GGAReceivedLED, HIGH);
-    }
-    else
-    {
-        digitalWrite(GGAReceivedLED, LOW);
-    }
+//    if (blink)
+//    {
+//        digitalWrite(GGAReceivedLED, HIGH);
+//    }
+//    else
+//    {
+//        digitalWrite(GGAReceivedLED, LOW);
+//    }
 
     blink = !blink;
     GGA_Available = true;
