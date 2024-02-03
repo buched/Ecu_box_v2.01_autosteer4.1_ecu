@@ -247,11 +247,11 @@ void setup()
   SerialGPS->addMemoryForRead(GPSrxbuffer, serial_buffer_size);
   SerialGPS->addMemoryForWrite(GPStxbuffer, serial_buffer_size);
 
-  delay(10);
+  delay(500);
   SerialRTK.begin(baudRTK);
   SerialRTK.addMemoryForRead(RTKrxbuffer, serial_buffer_size);
 
-  delay(10);
+  delay(500);
   SerialGPS2->begin(baudGPS);
   SerialGPS2->addMemoryForRead(GPS2rxbuffer, serial_buffer_size);
   SerialGPS2->addMemoryForWrite(GPS2txbuffer, serial_buffer_size);
@@ -260,10 +260,10 @@ void setup()
 
   Serial.println("\r\nStarting AutoSteer...");
   autosteerSetup();
-  
+  delay(500);
   Serial.println("\r\nStarting Ethernet...");
   EthernetStart();
-
+delay(500);
   Serial.println("\r\nStarting IMU...");
   //test if CMPS working
   uint8_t error;
