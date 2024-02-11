@@ -34,6 +34,7 @@
 
 //Not Connected for Cytron, Right PWM for IBT2
 #define PWM2_RPWM  33
+#define PWM2_OPT  37
 
 //--------------------------- Switch Input Pins ------------------------
 #define STEERSW_PIN 6
@@ -42,7 +43,7 @@
 
 //Define sensor pin for current or pressure sensor
 #define CURRENT_SENSOR_PIN A17
-#define PRESSURE_SENSOR_PIN A10
+#define PRESSURE_SENSOR_PIN A14
 
 #define CONST_180_DIVIDED_BY_PI 57.2957795130823
 
@@ -162,6 +163,7 @@ void steerConfigInit()
   if (steerConfig.CytronDriver) 
   {
     pinMode(PWM2_RPWM, OUTPUT);
+    pinMode(PWM2_RPWM, OPT);
   }
 }
 
