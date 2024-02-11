@@ -163,7 +163,7 @@ void steerConfigInit()
   if (steerConfig.CytronDriver) 
   {
     pinMode(PWM2_RPWM, OUTPUT);
-    pinMode(PWM2_RPWM, OPT);
+    pinMode(PWM2_OPT, OUTPUT);
   }
 }
 
@@ -185,16 +185,19 @@ void autosteerSetup()
   {
     analogWriteFrequency(PWM1_LPWM, 490);
     analogWriteFrequency(PWM2_RPWM, 490);
+    analogWriteFrequency(PWM2_OPT, 490);
   }
   else if (PWM_Frequency == 1)
   {
     analogWriteFrequency(PWM1_LPWM, 122);
     analogWriteFrequency(PWM2_RPWM, 122);
+    analogWriteFrequency(PWM2_OPT, 122);
   }
   else if (PWM_Frequency == 2)
   {
     analogWriteFrequency(PWM1_LPWM, 3921);
     analogWriteFrequency(PWM2_RPWM, 3921);
+    analogWriteFrequency(PWM2_OPT, 3921);
   }
 
   //keep pulled high and drag low to activate, noise free safe
@@ -425,10 +428,12 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 0);
+          digitalWrite(PWM2_OPT, 0);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 1);
+          digitalWrite(PWM2_OPT, 1);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 1);
@@ -452,10 +457,12 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 1);
+          digitalWrite(PWM2_OPT, 1);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 0);
+          digitalWrite(PWM2_OPT, 0);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 0); //IBT2
