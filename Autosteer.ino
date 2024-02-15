@@ -54,6 +54,16 @@ ADS1115_lite adc(ADS1115_DEFAULT_ADDRESS);     // Use this for the 16-bit versio
 
 #include <IPAddress.h>
 #include "BNO08x_AOG.h"
+#include <FlexCAN_T4.h>
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_256> V_Bus;    //Steering Valve Bus
+uint32_t Time;                  //Time Arduino has been running
+uint32_t relayTime;             //Time to keep "Button Pressed" from CAN Message
+boolean engageCAN = 0;          //Variable for Engage from CAN
+boolean workCAN = 0;            //Variable for Workswitch from CAN
+uint8_t ISORearHitch = 250;     //Variable for hitch height from ISOBUS (0-250 *0.4 = 0-100%)
+uint8_t KBUSRearHitch = 250;    //Variable for hitch height from KBUS (0-250 *0.4 = 0-100%) - CaseIH tractor bus
+boolean Service = 0;            //Variable for Danfoss Service Tool Mode
+boolean ShowCANData = 0;        //Variable for Showing CAN Data
 
 #ifdef ARDUINO_TEENSY41
 // ethernet
@@ -264,7 +274,8 @@ void autosteerSetup()
 
   adc.setSampleRate(ADS1115_REG_CONFIG_DR_128SPS); //128 samples per second
   adc.setGain(ADS1115_REG_CONFIG_PGA_6_144V);
-
+delay(3000);
+CAN_setup();
 }// End of Setup
 
 void autosteerLoop()
@@ -294,24 +305,30 @@ void autosteerLoop()
     {
       steerSwitch = digitalRead(STEERSW_PIN); //read auto steer enable switch open = 0n closed = Off
     }
-    else if (steerConfig.SteerButton == 1)    //steer Button momentary
-    {
-      reading = digitalRead(STEERSW_PIN);
-      if (reading == LOW && previous == HIGH)
+      else if(steerConfig.SteerButton == 1)     //steer Button momentary
       {
-        if (currentState == 1)
-        {
-          currentState = 0;
-          steerSwitch = 0;
-        }
-        else
-        {
-          currentState = 1;
-          steerSwitch = 1;
-        }
+        reading = digitalRead(STEERSW_PIN); 
+
+        //CAN
+        if (engageCAN == 1) reading = 0;              //CAN Engage is ON (Button is Pressed)
+              
+            if (reading == LOW && previous == HIGH) 
+            {
+                if (currentState == 1)
+                {
+                currentState = 0;
+                steerSwitch = 0;
+                }
+                else
+                {
+                currentState = 1;
+                steerSwitch = 1;
+                }
+            }      
+            previous = reading;
+        
+           //--------CAN CutOut--------------------------
       }
-      previous = reading;
-    }
     else                                      // No steer switch and no steer button
     {
       // So set the correct value. When guidanceStatus = 1,
@@ -349,6 +366,7 @@ void autosteerLoop()
           steerSwitch = 1; // reset values like it turned off
           currentState = 1;
           previous = 0;
+         engageCAN = 0;
       }
     }
 
@@ -365,6 +383,7 @@ void autosteerLoop()
           steerSwitch = 1; // reset values like it turned off
           currentState = 1;
           previous = 0;
+         engageCAN = 0;
       }
     }
 
