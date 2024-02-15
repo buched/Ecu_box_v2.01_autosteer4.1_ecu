@@ -16,14 +16,13 @@ CAN_message_t msgi;
       if ( V_Bus.read(msgi) ) 
           {
             if (msgi.id == 0x18FF1A03)
-              {        
+              {
                 if ((msgi.buf[2])== 0x15)
                   {
                     Time = millis();
                     engageCAN = 1;
                     relayTime = ((millis() + 1000));
                    }
-
                }
           }
 }
