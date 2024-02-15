@@ -533,7 +533,7 @@ void autosteerLoop()
       if ( lastEnc) EncoderFunc();
     }
   }
-
+VBus_Receive();
 } // end of main loop
 
 int currentRoll = 0;
