@@ -39,7 +39,7 @@
 //--------------------------- Switch Input Pins ------------------------
 #define STEERSW_PIN 6
 #define WORKSW_PIN 7
-#define REMOTE_PIN 39
+#define REMOTE_PIN 13
 
 //Define sensor pin for current or pressure sensor
 #define CURRENT_SENSOR_PIN A17
