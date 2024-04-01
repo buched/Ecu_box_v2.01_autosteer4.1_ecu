@@ -9,6 +9,12 @@
 Boitier :
 https://fr.aliexpress.com/item/32857771975.html
 
+convertisseur 3.3v (les modeles vx ou lm fonctionnenet aussi): 
+https://www.mouser.fr/ProductDetail/710-173010335
+
+convertisseur 5v (les modeles vx ou lm fonctionnenet aussi): 
+https://www.mouser.fr/ProductDetail/710-173010535
+
 câble sma :
 https://fr.aliexpress.com/item/1005004690761874.html
 
