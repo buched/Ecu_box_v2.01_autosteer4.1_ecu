@@ -9,6 +9,12 @@
 Boitier :
 https://fr.aliexpress.com/item/32857771975.html
 
+câble sma :
+https://fr.aliexpress.com/item/1005004690761874.html
+
+câble pour le f9p :
+https://fr.aliexpress.com/item/4001175655443.html
+
 condensateur céramiques toujours indispo chez jlcpcb pour le module ethernet 
 https://www.tme.eu/fr/details/cch-1n_2000v/condensateurs-ceramiques-tht/sr-passives/
 
