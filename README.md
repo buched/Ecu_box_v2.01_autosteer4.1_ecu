@@ -26,7 +26,7 @@ https://www.tme.eu/fr/details/cch-1n_2000v/condensateurs-ceramiques-tht/sr-passi
 
 ![Capture](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/3f66ee22-7161-4123-9116-da2f6aa5b637)
 
-il y a 3 shunt a faire pour switch entre le mode i2c ou RVC du bno
+il y a 3 shunt a faire pour switch entre le mode i2c ou RVC du bno (rvc mode pas encore testé)
 
 ![Capture](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/ab552b2e-5fdf-4b62-b678-70731f87bc5f)
 
