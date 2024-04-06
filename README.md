@@ -34,6 +34,7 @@ il y a 3 shunt a faire pour switch entre le mode i2c ou RVC du bno (rvc mode pas
 
 
 branchement du f9p
+
 ![1](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/e689c696-0e43-45a9-8f29-4c8d4168ac5c)
 
 ![2](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/85690cf6-3620-4386-8f42-bbcb54efe160)
