@@ -24,11 +24,11 @@ https://fr.aliexpress.com/item/4001175655443.html
 condensateur céramiques toujours indispo chez jlcpcb pour le module ethernet 
 https://www.tme.eu/fr/details/cch-1n_2000v/condensateurs-ceramiques-tht/sr-passives/
 
-![Capture](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/3f66ee22-7161-4123-9116-da2f6aa5b637)
+![318373271-3f66ee22-7161-4123-9116-da2f6aa5b637](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/72647b8b-1d11-42b8-9340-0c9bf29725ca)
 
 il y a 3 shunt a faire pour switch entre le mode i2c ou RVC du bno (rvc mode pas encore testé)
 
-![Capture](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/ab552b2e-5fdf-4b62-b678-70731f87bc5f)
+![318373872-ab552b2e-5fdf-4b62-b678-70731f87bc5f](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/b4567608-47a4-4763-9847-f0bdc3fd5ed7)
 
 ![3](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/e682ae5f-f75a-4f0d-8315-cf73c056a5c1)
 
