@@ -39,6 +39,8 @@ branchement du f9p
 
 ![2](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/85690cf6-3620-4386-8f42-bbcb54efe160)
 
+recepteur gps alternatif UM960/980/982
+https://witmotion-sensor.com/products/witmotion-gps-rtk-module-um982-high-precision-centimeter-level-differential-relative-positioning-and-orientation-um960?variant=42873258311877
 
 mini pcb additionnele pour ceux ayant besoin d'une sortie relais
 ![photo_2024-04-02_18-50-29](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/49fc2de2-048a-42ea-912f-3dd5e917dd23)
