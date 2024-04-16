@@ -135,7 +135,7 @@ byte velocityPWM_Pin = 36;      // Velocity (MPH speed) PWM pin
 
 //roll moyenne flottante
 #include "RunningAverage.h"
-RunningAverage myRA(7);
+RunningAverage myRA(10);
 int samples = 0;
 float avg = 0;
 
