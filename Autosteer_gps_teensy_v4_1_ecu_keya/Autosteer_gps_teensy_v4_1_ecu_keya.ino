@@ -132,6 +132,13 @@ byte velocityPWM_Pin = 36;      // Velocity (MPH speed) PWM pin
 #include "zNMEAParser.h"
 #include <Wire.h>
 #include "BNO08x_AOG.h"
+
+//roll moyenne flottante
+#include "RunningAverage.h"
+RunningAverage myRA(7);
+int samples = 0;
+float avg = 0;
+
 #include <FlexCAN_T4.h>
 // CRX2/CTX2 on Teensy are CAN2 on board
 // CRX3/CTX3 on Teensy are CAN1 on board
