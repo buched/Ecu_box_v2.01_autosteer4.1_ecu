@@ -153,15 +153,19 @@ void readBNO()
             float t1 = +1.0 - 2.0 * (dqx * dqx + ysqr);
 //            roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
 
-            if(steerConfig.IsUseY_Axis)
+            if (steerConfig.IsUseY_Axis)
             {
               roll = asin(t2) * RAD_TO_DEG_X_10;
+              myRA.addValue(roll);
+              avg = myRA.getAverage();
               pitch = atan2(t0, t1) * RAD_TO_DEG_X_10;
             }
             else
             {
               pitch = asin(t2) * RAD_TO_DEG_X_10;
               roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
+              myRA.addValue(roll);
+              avg = myRA.getAverage();
             }
             
             if(invertRoll)
@@ -229,7 +233,7 @@ void imuHandler()
             itoa(temp, imuPitch, 10);
 
             // the roll x10
-            temp = (int16_t)roll;
+            temp = (int16_t)avg;
             itoa(temp, imuRoll, 10);
 
             // YawRate - 0 for now
