@@ -34,12 +34,11 @@
 
 //Not Connected for Cytron, Right PWM for IBT2
 #define PWM2_RPWM  33
-#define PWM2_OPT  37
 
 //--------------------------- Switch Input Pins ------------------------
 #define STEERSW_PIN 6
 #define WORKSW_PIN 7
-#define REMOTE_PIN 13
+#define REMOTE_PIN 8
 
 //Define sensor pin for current or pressure sensor
 #define CURRENT_SENSOR_PIN A17
@@ -289,7 +288,6 @@ void autosteerLoop()
 
 		//read all the switches
 		workSwitch = digitalRead(WORKSW_PIN);  // read work switch
-    if (workCAN == 1) workSwitch = 0;         // If CAN workswitch is on, set workSwitch ON
 
 		if (steerConfig.SteerSwitch == 1)         //steer switch on - off
 		{
@@ -298,7 +296,6 @@ void autosteerLoop()
 		else if (steerConfig.SteerButton == 1)    //steer Button momentary
 		{
 			reading = digitalRead(STEERSW_PIN);
-      if (engageCAN == 1) reading = 0;
 			if (reading == LOW && previous == HIGH)
 			{
 				if (currentState == 1)
@@ -351,7 +348,6 @@ void autosteerLoop()
 				steerSwitch = 1; // reset values like it turned off
 				currentState = 1;
 				previous = 0;
-        engageCAN = 0;
 			}
 		}
 
@@ -364,7 +360,6 @@ void autosteerLoop()
 					steerSwitch = 1; // reset values like it turned off
 					currentState = 1;
 					previous = 0;
-          engageCAN = 0;
 				}
 			}
 			else {
@@ -378,7 +373,6 @@ void autosteerLoop()
 					steerSwitch = 1; // reset values like it turned off
 					currentState = 1;
 					previous = 0;
-          engageCAN = 0;
 				}
 
 			}
@@ -439,7 +433,7 @@ void autosteerLoop()
 		if (watchdogTimer < WATCHDOG_THRESHOLD)
 		{
 			//Enable H Bridge for IBT2, hyd aux, etc for cytron. Don't care about this for Keya
-			if (!isKeya) {
+			if (true || !isKeya) {
 				if (steerConfig.CytronDriver)
 				{
 					if (steerConfig.IsRelayActiveHigh)
@@ -468,7 +462,7 @@ void autosteerLoop()
 			//we've lost the comm to AgOpenGPS, or just stop request
 			//Disable H Bridge for IBT2, hyd aux, etc for cytron
 			// Don't care about this for Keya
-			if (!isKeya) {
+			if (true || !isKeya) {
 				if (steerConfig.CytronDriver)
 				{
 					if (steerConfig.IsRelayActiveHigh)

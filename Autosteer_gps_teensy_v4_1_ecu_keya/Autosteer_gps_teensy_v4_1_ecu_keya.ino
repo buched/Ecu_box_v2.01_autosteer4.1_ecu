@@ -34,7 +34,7 @@
 #define SerialAOG Serial                //AgIO USB conection
 #define SerialRTK Serial7               //RTK radio
 HardwareSerial* SerialGPS = &Serial3;   //Main postion receiver (GGA) (Serial2 must be used here with T4.0 / Basic Panda boards - Should auto swap)
-HardwareSerial* SerialGPS2 = &Serial8;  //Dual heading receiver 
+HardwareSerial* SerialGPS2 = &Serial2;  //Dual heading receiver 
 HardwareSerial* SerialGPSTmp = NULL;
 //HardwareSerial* SerialAOG = &Serial;
 
@@ -135,24 +135,14 @@ byte velocityPWM_Pin = 36;      // Velocity (MPH speed) PWM pin
 
 //roll moyenne flottante
 #include "RunningAverage.h"
-RunningAverage myRA(10);
-int samples = 0;
+RunningAverage myRA(7);
 float avg = 0;
 
 #include <FlexCAN_T4.h>
 // CRX2/CTX2 on Teensy are CAN2 on board
 // CRX3/CTX3 on Teensy are CAN1 on board
 // Seems to work for CAN2, not sure why it didn't for CAN1
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_256> Engage_Bus;
 FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_256> Keya_Bus;
-
-//add buched
-uint32_t Time;
-boolean engageCAN = 0;
-uint32_t relayTime;
-boolean workCAN = 0;
-uint8_t RearHitch = 250;
-uint8_t pressureReading;
 
 //Used to set CPU speed
 extern "C" uint32_t set_arm_clock(uint32_t frequency); // required prototype
@@ -265,20 +255,20 @@ void setup()
   parser.addHandler("G-GGA", GGA_Handler);
   parser.addHandler("G-VTG", VTG_Handler);
 
-  delay(500);
+  delay(10);
   Serial.begin(baudAOG);
-  delay(500);
+  delay(10);
   Serial.println("Start setup");
 
   SerialGPS->begin(baudGPS);
   SerialGPS->addMemoryForRead(GPSrxbuffer, serial_buffer_size);
   SerialGPS->addMemoryForWrite(GPStxbuffer, serial_buffer_size);
 
-  delay(500);
+  delay(10);
   SerialRTK.begin(baudRTK);
   SerialRTK.addMemoryForRead(RTKrxbuffer, serial_buffer_size);
 
-  delay(500);
+  delay(10);
   SerialGPS2->begin(baudGPS);
   SerialGPS2->addMemoryForRead(GPS2rxbuffer, serial_buffer_size);
   SerialGPS2->addMemoryForWrite(GPS2txbuffer, serial_buffer_size);
@@ -287,16 +277,16 @@ void setup()
 
   Serial.println("\r\nStarting AutoSteer...");
   autosteerSetup();
-  delay(1000);
+  
   Serial.println("\r\nStarting Ethernet...");
   EthernetStart();
-  delay(1000);
+
   Serial.println("\r\nStarting IMU...");
   //test if CMPS working
   uint8_t error;
 
   ImuWire.begin();
-   delay(1000); 
+  
   //Serial.println("Checking for CMPS14");
   ImuWire.beginTransmission(CMPS14_ADDRESS);
   error = ImuWire.endTransmission();
@@ -366,7 +356,7 @@ void setup()
   Serial.println(useCMPS);
   Serial.print("useBNO08x = ");
   Serial.println(useBNO08x);
-  delay(1000);
+
   Serial.println("Right... time for some CANBUS! And, we're dedicated to Keya here");
   CAN_Setup();
 
@@ -376,7 +366,6 @@ void setup()
 void loop()
 {
     KeyaBus_Receive();
-    Engage_Receive();
     if (GGA_Available == false && !passThroughGPS && !passThroughGPS2)
     {
         if (systick_millis_count - PortSwapTime >= 10000)

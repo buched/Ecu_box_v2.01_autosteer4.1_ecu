@@ -60,14 +60,14 @@ void GGA_Handler() //Rec'd GGA
     // time of last DGPS update
     parser.getArg(12, ageDGPS);
 
-//    if (blink)
-//    {
-//        digitalWrite(GGAReceivedLED, HIGH);
-//    }
-//    else
-//    {
-//        digitalWrite(GGAReceivedLED, LOW);
-//    }
+    if (blink)
+    {
+        //digitalWrite(GGAReceivedLED, HIGH);
+    }
+    else
+    {
+        //digitalWrite(GGAReceivedLED, LOW);
+    }
 
     blink = !blink;
     GGA_Available = true;
@@ -153,7 +153,7 @@ void readBNO()
             float t1 = +1.0 - 2.0 * (dqx * dqx + ysqr);
 //            roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
 
-            if (steerConfig.IsUseY_Axis)
+            if(steerConfig.IsUseY_Axis)
             {
               roll = asin(t2) * RAD_TO_DEG_X_10;
               myRA.addValue(roll);
@@ -168,6 +168,8 @@ void readBNO()
               avg = myRA.getAverage();
             }
             
+            roll = avg;
+
             if(invertRoll)
             {
               roll *= -1;
@@ -233,7 +235,7 @@ void imuHandler()
             itoa(temp, imuPitch, 10);
 
             // the roll x10
-            temp = (int16_t)avg;
+            temp = (int16_t)roll;
             itoa(temp, imuRoll, 10);
 
             // YawRate - 0 for now
