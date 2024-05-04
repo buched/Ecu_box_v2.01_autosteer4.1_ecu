@@ -162,6 +162,8 @@ void KeyaBus_Receive() {
 			// TODO Yeah, if we ever see something here, fire off a disable, refuse to engage autosteer or..?
 			//KeyaCurrentSensorReading = abs((int16_t)((KeyaBusReceiveData.buf[5] << 8) | KeyaBusReceiveData.buf[4]));
 			//if (KeyaCurrentSensorReading > 255) KeyaCurrentSensorReading -= 255;
+			//
+			// add https://github.com/gunicsba/AgOpenGPS_Boards/blob/Keya/TeensyModules/V4.1/Firmware mod
 			if (KeyaBusReceiveData.buf[4] == 0xFF) {
 				KeyaCurrentSensorReading = (0.9 * KeyaCurrentSensorReading  ) + ( 0.1 *  (256 - KeyaBusReceiveData.buf[5]) * 20);
 			}
