@@ -35,22 +35,12 @@ void keyaSend(uint8_t data[]) {
 void CAN_Setup() {
 	Keya_Bus.begin();
 	Keya_Bus.setBaudRate(250000);
-	// Dedicated bus, zero chat from others. No need for filters
-//	CAN_message_t msgV;
-//	msgV.id = KeyaPGN;
-//	msgV.flags.extended = true;
-//	msgV.len = 8;
-//	// claim an address. Don't think I need to do this tho
-//	// anyway, just pinched this from Claas address. TODO, looks like we can do without, ditch this
-//	msgV.buf[0] = 0x00;
-//	msgV.buf[1] = 0x00;
-//	msgV.buf[2] = 0xC0;
-//	msgV.buf[3] = 0x0C;
-//	msgV.buf[4] = 0x00;
-//	msgV.buf[5] = 0x17;
-//	msgV.buf[6] = 0x02;
-//	msgV.buf[7] = 0x20;
-//	Keya_Bus.write(msgV);
+  Engage_Bus.begin();
+  Engage_Bus.setBaudRate(250000);
+  Engage_Bus.enableFIFO();
+  Engage_Bus.setFIFOFilter(REJECT_ALL);
+  Engage_Bus.setFIFOFilter(0, 0x14FF7706, EXT);  //CaseIH Engage Message
+  Engage_Bus.setFIFOFilter(1, 0x18FE4523, EXT);  //CaseIH Rear Hitch Infomation
 	delay(1000);
 	if (debugKeya) Serial.println("Initialised Keya CANBUS");
 }
@@ -162,14 +152,12 @@ void KeyaBus_Receive() {
 			// TODO Yeah, if we ever see something here, fire off a disable, refuse to engage autosteer or..?
 			//KeyaCurrentSensorReading = abs((int16_t)((KeyaBusReceiveData.buf[5] << 8) | KeyaBusReceiveData.buf[4]));
 			//if (KeyaCurrentSensorReading > 255) KeyaCurrentSensorReading -= 255;
-			//
-			// add https://github.com/gunicsba/AgOpenGPS_Boards/blob/Keya/TeensyModules/V4.1/Firmware mod
-			if (KeyaBusReceiveData.buf[4] == 0xFF) {
-				KeyaCurrentSensorReading = (0.9 * KeyaCurrentSensorReading  ) + ( 0.1 *  (256 - KeyaBusReceiveData.buf[5]) * 20);
-			}
-			else {
-				KeyaCurrentSensorReading = (0.9 * KeyaCurrentSensorReading  ) + ( 0.1 * KeyaBusReceiveData.buf[5] * 20);
-			}
+      if (KeyaBusReceiveData.buf[4] == 0xFF) {
+        KeyaCurrentSensorReading = (0.9 * KeyaCurrentSensorReading  ) + ( 0.1 *  (256 - KeyaBusReceiveData.buf[5]) * 20);
+      }
+      else {
+        KeyaCurrentSensorReading = (0.9 * KeyaCurrentSensorReading  ) + ( 0.1 * KeyaBusReceiveData.buf[5] * 20);
+      }
 			//if (debugKeya) Serial.println("Heartbeat current is " + String(KeyaCurrentSensorReading));
 		}
 
@@ -189,4 +177,29 @@ void KeyaBus_Receive() {
 		//	}
 		//}
 	}
+}
+
+//---Receive K_Bus message
+void Engage_Receive()
+{
+CAN_message_t engmsgi;
+      if ( Engage_Bus.read(engmsgi) ) 
+          {
+            if (engmsgi.id == 0x18FF1A03)
+              {
+                if ((engmsgi.buf[2])== 0x15)
+                  {
+                    Time = millis();
+                    engageCAN = 1;
+                    relayTime = ((millis() + 1000));
+                   }
+               }
+            if (engmsgi.id == 0x18FE4523)
+              {
+                RearHitch = (engmsgi.buf[0]); 
+                pressureReading = RearHitch;
+                if (RearHitch < steerConfig.PulseCountMax) workCAN = 1; 
+                else workCAN = 0; 
+              }
+          }
 }
