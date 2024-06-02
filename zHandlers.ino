@@ -77,7 +77,7 @@ void GGA_Handler() //Rec'd GGA
        dualReadyGGA = true;
     }
 
-    if (useBNO08x || useCMPS)
+    if (useBNO08x || useCMPS || useWit)
     {
        imuHandler();          //Get IMU data ready
        BuildNmea();           //Build & send data GPS data to AgIO (Both Dual & Single)
@@ -88,7 +88,7 @@ void GGA_Handler() //Rec'd GGA
         //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF     
        }
     }
-    else if (!useBNO08x && !useCMPS && !useDual) 
+    else if (!useBNO08x && !useCMPS && !useWit && !useDual) 
     {
         //digitalWrite(GPSRED_LED, blink);   //Flash red GPS LED, we have GGA but no IMU or dual
         //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF
@@ -171,6 +171,27 @@ void readBNO()
         }
 }
 
+void readWit()
+{
+        while (SerialWit->available()) 
+          {
+            JY901.CopeSerialData(SerialWit->read()); //Call JY901 data cope function
+          }
+        hwt901Heading = ((float)JY901.stcAngle.Angle[2]/32768*180);
+        hwt901Roll = ((float)JY901.stcAngle.Angle[0]/32768*180);
+        hwt901Heading = -hwt901Heading;
+        
+        if (hwt901Heading < 0 && hwt901Heading >= -180) //Scale BNO085 yaw from [-180°;180°] to [0;360°]
+        {
+          hwt901Heading = hwt901Heading + 360;
+        }
+            
+        yaw = (float)(hwt901Heading) * 10;
+        roll = (float)(hwt901Roll) * 10;
+        Serial.println(roll);
+
+}
+
 void imuHandler()
 {
     int16_t temp = 0;
@@ -218,6 +239,25 @@ void imuHandler()
         }
 
         if (useBNO08x)
+        {
+            //BNO is reading in its own timer    
+            // Fill rest of Panda Sentence - Heading
+            temp = yaw;
+            itoa(temp, imuHeading, 10);
+
+            // the pitch x10
+            temp = (int16_t)pitch;
+            itoa(temp, imuPitch, 10);
+
+            // the roll x10
+            temp = (int16_t)roll;
+            itoa(temp, imuRoll, 10);
+
+            // YawRate - 0 for now
+            itoa(0, imuYawRate, 10);
+        }
+
+        if (useWit)
         {
             //BNO is reading in its own timer    
             // Fill rest of Panda Sentence - Heading
