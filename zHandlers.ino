@@ -60,14 +60,14 @@ void GGA_Handler() //Rec'd GGA
     // time of last DGPS update
     parser.getArg(12, ageDGPS);
 
-//    if (blink)
-//    {
-//        digitalWrite(GGAReceivedLED, HIGH);
-//    }
-//    else
-//    {
-//        digitalWrite(GGAReceivedLED, LOW);
-//    }
+    if (blink)
+    {
+        //digitalWrite(GGAReceivedLED, HIGH);
+    }
+    else
+    {
+        //digitalWrite(GGAReceivedLED, LOW);
+    }
 
     blink = !blink;
     GGA_Available = true;
@@ -77,7 +77,7 @@ void GGA_Handler() //Rec'd GGA
        dualReadyGGA = true;
     }
 
-    if (useBNO08x || useCMPS)
+    if (useBNO08x || useCMPS || canimu.UseImuCan)
     {
        imuHandler();          //Get IMU data ready
        BuildNmea();           //Build & send data GPS data to AgIO (Both Dual & Single)
@@ -155,19 +155,27 @@ void readBNO()
 
             if(steerConfig.IsUseY_Axis)
             {
-              roll = asin(t2) * RAD_TO_DEG_X_10;
-              pitch = atan2(t0, t1) * RAD_TO_DEG_X_10;
+              if (canimu.UseImuCan == 0)
+              {
+                roll = asin(t2) * RAD_TO_DEG_X_10;
+              }
+                pitch = atan2(t0, t1) * RAD_TO_DEG_X_10;
             }
             else
             {
               pitch = asin(t2) * RAD_TO_DEG_X_10;
-              roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
+            if (canimu.UseImuCan == 0)
+              {
+                roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
+              }
             }
-            
-            if(invertRoll)
-            {
-              roll *= -1;
-            }
+            if (canimu.UseImuCan == 0)
+              {            
+                if(invertRoll)
+                {
+                  roll *= -1;
+                }
+              }
         }
 }
 

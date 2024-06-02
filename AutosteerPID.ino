@@ -88,7 +88,6 @@ void motorDrive(void)
       pwmDrive = -1 * pwmDrive;
       analogWrite(PWM1_LPWM, 0);//Turn off before other one on
       analogWrite(PWM2_RPWM, pwmDrive);
-      analogWrite(PWM2_OPT, pwmDrive);
     }
 
     pwmDisplay = pwmDrive;
