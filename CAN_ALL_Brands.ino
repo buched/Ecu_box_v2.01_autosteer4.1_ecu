@@ -75,7 +75,8 @@ void serv() {
         else if ( b == 'X') Service = 0; //Exit Service Mode
         else if ( b == '0') startsetup();
         else if ( b == '1') startsetupp();
-        //else if ( b == '2') rollcan();
+        else if ( b == '2') activate();
+        else if ( b == '3') deactivate();
         else
         {
           Serial.println("No command, send ? for help");
@@ -95,7 +96,8 @@ void Help() {
   Serial.println("X = service mode exit");
   Serial.println("0 = start setup with 250k baud");
   Serial.println("1 = start setup with 500k baud");
-  //Serial.println("2 = see can bus");
+  Serial.println("2 = can imu activation in ino");
+  Serial.println("3 = can imu desactivation in ino");
   }
 
 void startsetup() {
@@ -212,3 +214,15 @@ void setcanbaudratee() {
   
   Serial.println("CAN bauds set to 500k");
 }
+
+void activate() {
+      canimu.UseImuCan = 1;
+   //store in EEPROM
+  EEPROM.put(90, canimu);
+  }
+
+void deactivate() {
+      canimu.UseImuCan = 0;
+   //store in EEPROM
+  EEPROM.put(90, canimu);
+  }
