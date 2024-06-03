@@ -33,17 +33,17 @@
 #define PWM1_LPWM  2
 
 //Not Connected for Cytron, Right PWM for IBT2
-#define PWM2_RPWM  3
-//#define PWM2_OPT  37
+#define PWM2_RPWM  33
+#define PWM2_OPT  37
 
 //--------------------------- Switch Input Pins ------------------------
-#define STEERSW_PIN 32
-#define WORKSW_PIN 34
-#define REMOTE_PIN 37
+#define STEERSW_PIN 6
+#define WORKSW_PIN 7
+#define REMOTE_PIN 8
 
 //Define sensor pin for current or pressure sensor
 #define CURRENT_SENSOR_PIN A17
-#define PRESSURE_SENSOR_PIN A10
+#define PRESSURE_SENSOR_PIN A14
 
 #define CONST_180_DIVIDED_BY_PI 57.2957795130823
 
@@ -172,7 +172,7 @@ void steerConfigInit()
   if (steerConfig.CytronDriver) 
   {
     pinMode(PWM2_RPWM, OUTPUT);
-    //pinMode(PWM2_OPT, OUTPUT);
+    pinMode(PWM2_OPT, OUTPUT);
   }
 }
 
@@ -194,19 +194,19 @@ void autosteerSetup()
   {
     analogWriteFrequency(PWM1_LPWM, 490);
     analogWriteFrequency(PWM2_RPWM, 490);
-    //analogWriteFrequency(PWM2_OPT, 490);
+    analogWriteFrequency(PWM2_OPT, 490);
   }
   else if (PWM_Frequency == 1)
   {
     analogWriteFrequency(PWM1_LPWM, 122);
     analogWriteFrequency(PWM2_RPWM, 122);
-    //analogWriteFrequency(PWM2_OPT, 122);
+    analogWriteFrequency(PWM2_OPT, 122);
   }
   else if (PWM_Frequency == 2)
   {
     analogWriteFrequency(PWM1_LPWM, 3921);
     analogWriteFrequency(PWM2_RPWM, 3921);
-    //analogWriteFrequency(PWM2_OPT, 3921);
+    analogWriteFrequency(PWM2_OPT, 3921);
   }
 
   //keep pulled high and drag low to activate, noise free safe
@@ -446,12 +446,12 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 0);
-          //digitalWrite(PWM2_OPT, 0);
+          digitalWrite(PWM2_OPT, 0);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 1);
-          //digitalWrite(PWM2_OPT, 1);
+          digitalWrite(PWM2_OPT, 1);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 1);
@@ -475,12 +475,12 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 1);
-          //digitalWrite(PWM2_OPT, 1);
+          digitalWrite(PWM2_OPT, 1);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 0);
-          //digitalWrite(PWM2_OPT, 0);
+          digitalWrite(PWM2_OPT, 0);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 0); //IBT2
