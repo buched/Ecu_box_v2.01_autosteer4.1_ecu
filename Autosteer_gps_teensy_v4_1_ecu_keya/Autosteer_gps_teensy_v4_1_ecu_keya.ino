@@ -645,4 +645,64 @@ void loop()
     }
 
     //Read BNO
-    if((systick_
+    if((systick_millis_count - READ_BNO_TIME) > REPORT_INTERVAL && useBNO08x)
+    {
+      READ_BNO_TIME = systick_millis_count;
+      readBNO();
+    }
+    
+    if (Autosteer_running) autosteerLoop();
+    else ReceiveUdp();
+    
+  if (Ethernet.linkStatus() == LinkOFF) 
+  {
+    //digitalWrite(Power_on_LED, 1);
+    //digitalWrite(Ethernet_Active_LED, 0);
+  }
+  if (Ethernet.linkStatus() == LinkON) 
+  {
+    //digitalWrite(Power_on_LED, 0);
+    //digitalWrite(Ethernet_Active_LED, 1);
+  }
+}//End Loop
+//**************************************************************************
+
+bool calcChecksum()
+{
+  CK_A = 0;
+  CK_B = 0;
+
+  for (int i = 2; i < 70; i++)
+  {
+    CK_A = CK_A + ackPacket[i];
+    CK_B = CK_B + CK_A;
+  }
+
+  return (CK_A == ackPacket[70] && CK_B == ackPacket[71]);
+}
+
+//Given a message, calc and store the two byte "8-Bit Fletcher" checksum over the entirety of the message
+//This is called before we send a command message
+void calcChecksum(ubxPacket *msg)
+{
+  msg->checksumA = 0;
+  msg->checksumB = 0;
+
+  msg->checksumA += msg->cls;
+  msg->checksumB += msg->checksumA;
+
+  msg->checksumA += msg->id;
+  msg->checksumB += msg->checksumA;
+
+  msg->checksumA += (msg->len & 0xFF);
+  msg->checksumB += msg->checksumA;
+
+  msg->checksumA += (msg->len >> 8);
+  msg->checksumB += msg->checksumA;
+
+  for (uint16_t i = 0; i < msg->len; i++)
+  {
+    msg->checksumA += msg->payload[i];
+    msg->checksumB += msg->checksumA;
+  }
+}
