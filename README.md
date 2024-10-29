@@ -46,3 +46,14 @@ https://witmotion-sensor.com/products/witmotion-gps-rtk-module-um982-high-precis
 
 mini pcb additionnele pour ceux ayant besoin d'une sortie relais
 ![photo_2024-04-02_18-50-29](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/49fc2de2-048a-42ea-912f-3dd5e917dd23)
+
+
+Tips :
+
+depannage ethernet
+sur la centaine de pcb que j'ai vu, c'est le deuxieme qui fini par ne plus fonctionner niveau ethernet. après recherche et tests, il s'avare que les soudures smd de jlcpcb sont limites et le modules ethernet fini par se dessouder
+pour vérifier : tester la continuité en 1/2 et 5/6 : continuité ok = le probleme ne vient pas de ce cas de figure. si pas de continuité, tester en 3/4 7/8 : si continuité alors le module est legerement dessoudé
+pour réparer, chauffer le fer et passer rapidement a plat sur tout les contacts et ca devrait suffir
+
+![depannage ethernet](https://github.com/user-attachments/assets/7dcb6623-f1cb-471e-a1a8-a779aa0a1315)
+
