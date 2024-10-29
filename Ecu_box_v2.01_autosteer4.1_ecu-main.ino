@@ -380,8 +380,8 @@ void loop()
                 HardwareSerial* autoBaudSerial = NULL;
 
                 // Reset SerialGPS and SerialGPS2
-                SerialGPS = &Serial7;
-                SerialGPS2 = &Serial2;
+                SerialGPS = &Serial3;
+                SerialGPS2 = &Serial8;
 
                 if (aogSerialCmdBuffer[aogSerialCmdCounter + 1] == '1')
                 {
