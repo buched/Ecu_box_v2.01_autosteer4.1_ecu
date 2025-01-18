@@ -47,6 +47,10 @@ https://witmotion-sensor.com/products/witmotion-gps-rtk-module-um982-high-precis
 mini pcb additionnele pour ceux ayant besoin d'une sortie relais
 ![photo_2024-04-02_18-50-29](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/49fc2de2-048a-42ea-912f-3dd5e917dd23)
 
+branchement du bno via le cable pour le positionner à 90 °
+
+![photo_2025-01-18_20-41-53](https://github.com/user-attachments/assets/22112eb9-f91e-42a9-9cb4-3aaeacdc1616)
+
 
 Tips :
 
