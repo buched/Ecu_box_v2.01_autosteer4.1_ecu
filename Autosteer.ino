@@ -169,7 +169,7 @@ struct Setup {
 }; Setup steerConfig;               // 9 bytes
 
 struct IMU {
-  uint8_t CanBauds = 1;              //1 = 125k, 2 = 250k, 3 = 500k, 4 = 1000k
+  uint8_t CanBauds = 1;              //1 = 125k(default settings of canimu module), 2 = 250k, 3 = 500k, 4 = 1000k
   uint8_t UseImuCan = 0;
 //stockage pour fonctions futures
 }; IMU canimu;
