@@ -62,227 +62,101 @@ void GGA_Handler() //Rec'd GGA
 
     if (blink)
     {
-        //digitalWrite(GGAReceivedLED, HIGH);
+        digitalWrite(GGAReceivedLED, HIGH);
     }
     else
     {
-        //digitalWrite(GGAReceivedLED, LOW);
+        digitalWrite(GGAReceivedLED, LOW);
     }
 
     blink = !blink;
-    GGA_Available = true;
+    bnoTrigger = true;
+    bnoTimer = 0;
 
     if (useDual)
     {
        dualReadyGGA = true;
     }
 
-    if (useBNO08x || useCMPS || canimu.UseImuCan)
+    else if (useBNO08xRVC)
     {
-       imuHandler();          //Get IMU data ready
-       BuildNmea();           //Build & send data GPS data to AgIO (Both Dual & Single)
-       dualReadyGGA = false;  //Force dual GGA ready false because we just sent it to AgIO based off the IMU data
-       if (!useDual)
-       {
-        //digitalWrite(GPSRED_LED, HIGH);    //Turn red GPS LED ON, we have GGA and must have a IMU     
-        //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF     
-       }
+        BuildNmea();           //Build & send data GPS data to AgIO (Both Dual & Single)
+        dualReadyGGA = false;  //Force dual GGA ready false because we just sent it to AgIO based off the IMU data
+        if (!useDual)
+        {
+            digitalWrite(GPSRED_LED, HIGH);    //Turn red GPS LED ON, we have GGA and must have a IMU     
+            digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF     
+        }
     }
-    else if (!useBNO08x && !useCMPS && !useDual) 
+
+    else if (!useDual && !useBNO08xRVC) 
     {
-        //digitalWrite(GPSRED_LED, blink);   //Flash red GPS LED, we have GGA but no IMU or dual
-        //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF
+        digitalWrite(GPSRED_LED, blink);   //Flash red GPS LED, we have GGA but no IMU or dual
+        digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF
         itoa(65535, imuHeading, 10);       //65535 is max value to stop AgOpen using IMU in Panda
         BuildNmea();
     }
     
-    gpsReadyTime = systick_millis_count;    //Used for GGA timeout (LED's ETC) 
-}
-
-void readBNO()
-{
-          if (bno08x.dataAvailable() == true)
-        {
-            float dqx, dqy, dqz, dqw, dacr;
-            uint8_t dac;
-
-            //get quaternion
-            bno08x.getQuat(dqx, dqy, dqz, dqw, dacr, dac);
-/*            
-            while (bno08x.dataAvailable() == true)
-            {
-                //get quaternion
-                bno08x.getQuat(dqx, dqy, dqz, dqw, dacr, dac);
-                //Serial.println("Whiling");
-                //Serial.print(dqx, 4);
-                //Serial.print(F(","));
-                //Serial.print(dqy, 4);
-                //Serial.print(F(","));
-                //Serial.print(dqz, 4);
-                //Serial.print(F(","));
-                //Serial.println(dqw, 4);
-            }
-            //Serial.println("End of while");
-*/            
-            float norm = sqrt(dqw * dqw + dqx * dqx + dqy * dqy + dqz * dqz);
-            dqw = dqw / norm;
-            dqx = dqx / norm;
-            dqy = dqy / norm;
-            dqz = dqz / norm;
-
-            float ysqr = dqy * dqy;
-
-            // yaw (z-axis rotation)
-            float t3 = +2.0 * (dqw * dqz + dqx * dqy);
-            float t4 = +1.0 - 2.0 * (ysqr + dqz * dqz);
-            yaw = atan2(t3, t4);
-
-            // Convert yaw to degrees x10
-            correctionHeading = -yaw;
-            yaw = (int16_t)((yaw * -RAD_TO_DEG_X_10));
-            if (yaw < 0) yaw += 3600;
-
-            // pitch (y-axis rotation)
-            float t2 = +2.0 * (dqw * dqy - dqz * dqx);
-            t2 = t2 > 1.0 ? 1.0 : t2;
-            t2 = t2 < -1.0 ? -1.0 : t2;
-//            pitch = asin(t2) * RAD_TO_DEG_X_10;
-
-            // roll (x-axis rotation)
-            float t0 = +2.0 * (dqw * dqx + dqy * dqz);
-            float t1 = +1.0 - 2.0 * (dqx * dqx + ysqr);
-//            roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
-
-            if(steerConfig.IsUseY_Axis)
-            {
-              if (canimu.UseImuCan == 0)
-              {
-                roll = asin(t2) * RAD_TO_DEG_X_10;
-              }
-                pitch = atan2(t0, t1) * RAD_TO_DEG_X_10;
-            }
-            else
-            {
-              pitch = asin(t2) * RAD_TO_DEG_X_10;
-            if (canimu.UseImuCan == 0)
-              {
-                roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
-              }
-            }
-            if (canimu.UseImuCan == 0)
-              {            
-                if(invertRoll)
-                {
-                  roll *= -1;
-                }
-              }
-        }
+    GGAReadyTime = 0;   //Used for GGA timeout (LED's ETC) 
 }
 
 void imuHandler()
 {
-    int16_t temp = 0;
     if (!useDual)
     {
-        if (useCMPS)
+        if (useBNO08xRVC)
         {
-            //the heading x10
-            Wire.beginTransmission(CMPS14_ADDRESS);
-            Wire.write(0x1C);
-            Wire.endTransmission();
+            float angVel;
 
-            Wire.requestFrom(CMPS14_ADDRESS, 3);
-            while (Wire.available() < 3);
+            // Fill rest of Panda Sentence - Heading
+            itoa(bnoData.yawX10, imuHeading, 10);
 
-            roll = int16_t(Wire.read() << 8 | Wire.read());
-            if (invertRoll)
+            if (steerConfig.IsUseY_Axis)
             {
-                roll *= -1;
+                // the pitch x100
+                itoa(bnoData.pitchX10, imuPitch, 10);
+
+                // the roll x100
+                itoa(bnoData.rollX10, imuRoll, 10);
+            }
+            else
+            {
+                // the pitch x100
+                itoa(bnoData.rollX10, imuPitch, 10);
+
+                // the roll x100
+                itoa(bnoData.pitchX10, imuRoll, 10);
             }
 
-            // the heading x10
-            Wire.beginTransmission(CMPS14_ADDRESS);
-            Wire.write(0x02);
-            Wire.endTransmission();
+            //Serial.print(rvc.angCounter);
+            //Serial.print(", ");
+            //Serial.print(bnoData.angVel);
+            //Serial.print(", ");
+            // YawRate
+            if (rvc.angCounter > 0)
+            {
+                angVel = ((float)bnoData.angVel) / (float)rvc.angCounter;
+                angVel *= 10.0;
+                rvc.angCounter = 0;
+                bnoData.angVel = (int16_t)angVel;
+            }
+            else
+            {
+                bnoData.angVel = 0;
+            }
 
-            Wire.requestFrom(CMPS14_ADDRESS, 3);
-            while (Wire.available() < 3);
-
-            temp = Wire.read() << 8 | Wire.read();
-            correctionHeading = temp * 0.1;
-            correctionHeading = correctionHeading * DEG_TO_RAD;
-            itoa(temp, imuHeading, 10);
-
-            // 3rd byte pitch
-            int8_t pitch = Wire.read();
-            itoa(pitch, imuPitch, 10);
-
-            // the roll x10
-            temp = (int16_t)roll;
-            itoa(temp, imuRoll, 10);
-
-            // YawRate - 0 for now
-            itoa(0, imuYawRate, 10);
-        }
-
-        if (useBNO08x)
-        {
-            //BNO is reading in its own timer    
-            // Fill rest of Panda Sentence - Heading
-            temp = yaw;
-            itoa(temp, imuHeading, 10);
-
-            // the pitch x10
-            temp = (int16_t)pitch;
-            itoa(temp, imuPitch, 10);
-
-            // the roll x10
-            temp = (int16_t)roll;
-            itoa(temp, imuRoll, 10);
-
-            // YawRate - 0 for now
-            itoa(0, imuYawRate, 10);
+            itoa(bnoData.angVel, imuYawRate, 10);
+            bnoData.angVel = 0;
         }
     }
 
-    // No else, because we want to use dual heading and IMU roll when both connected
-    if (useDual)
+    else
     {
-        // We have a IMU so apply the dual/IMU roll/heading error to the IMU data.
-//        if (useCMPS || useBNO08x)
-//        {
-//            float dualTemp;   //To convert IMU data (x10) to a float for the PAOGI so we have the decamal point
-//                     
-//            // the IMU heading raw
-////            dualTemp = yaw * 0.1;
-////            dtostrf(dualTemp, 3, 1, imuHeading);          
-//
-//            // the IMU heading fused to the dual heading
-//            fuseIMU();
-//            dtostrf(imuCorrected, 3, 1, imuHeading);
-//          
-//            // the pitch
-//            dualTemp = (int16_t)pitch * 0.1;
-//            dtostrf(dualTemp, 3, 1, imuPitch);
-//
-//            // the roll
-//            dualTemp = (int16_t)roll * 0.1;
-//            //If dual heading correction is 90deg (antennas left/right) correct the IMU roll
-//            if(headingcorr == 900)
-//            {
-//              dualTemp += rollDeltaSmooth;
-//            }
-//            dtostrf(dualTemp, 3, 1, imuRoll);
-//
-//        }
-//        else  //No IMU so put dual Heading & Roll in direct.
-        {
-            // the roll
-            dtostrf(rollDual, 4, 2, imuRoll);
+        // the roll
+        dtostrf(rollDual, 4, 2, imuRoll);
 
-            // the Dual heading raw
-            dtostrf(heading, 4, 2, imuHeading);
-        }
+        // the Dual heading raw
+        dtostrf(heading, 4, 2, imuHeading);
     }
 }
 
@@ -350,18 +224,13 @@ void BuildNmea(void)
 
     strcat(nmea, "\r\n");
 
-    if (!passThroughGPS && !passThroughGPS2)
-    {
-        SerialAOG.write(nmea);  //Always send USB GPS data
-    }
+    SerialAOG.write(nmea);  //Always send USB GPS data
 
-    if (Ethernet_running)   //If ethernet running send the GPS there
-    {
-        int len = strlen(nmea);
-        Eth_udpPAOGI.beginPacket(Eth_ipDestination, portDestination);
-        Eth_udpPAOGI.write(nmea, len);
-        Eth_udpPAOGI.endPacket();
-    }
+
+    int len = strlen(nmea);
+    Eth_udpPAOGI.beginPacket(Eth_ipDestination, portDestination);
+    Eth_udpPAOGI.write(nmea, len);
+    Eth_udpPAOGI.endPacket();
 }
 
 void CalculateChecksum(void)

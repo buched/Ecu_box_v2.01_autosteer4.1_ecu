@@ -5,6 +5,16 @@
    Like all Arduino code - copied from somewhere else :)
    So don't claim it as your own
 */
+//  0 = Claas (1E/30 Navagation Controller, 13/19 Steering Controller) - See Claas Notes on Service Tool Page
+//  1 = Valtra, Massey Fergerson (Standard Danfoss ISO 1C/28 Navagation Controller, 13/19 Steering Controller)
+//  2 = CaseIH, New Holland (AA/170 Navagation Controller, 08/08 Steering Controller)
+//  3 = Fendt (2C/44 Navagation Controller, F0/240 Steering Controller)
+//  4 = JCB (AB/171 Navagation Controller, 13/19 Steering Controller)
+//  5 = FendtOne - Same as Fendt but 500kbs K-Bus.
+//  6 = Lindner (F0/240 Navagation Controller, 13/19 Steering Controller)
+//  7 = AgOpenGPS - Remote CAN/PWM module (1C/28 Navagation Controller, 13/19 Steering Controller)
+
+uint8_t Brand = 1;              
 
 ////////////////// User Settings /////////////////////////
 
@@ -16,12 +26,16 @@
      122hz = 1
      3921hz = 2
 */
-#define PWM_Frequency 0
+#define PWM_Frequency 1
+
+//WAS Calabration
+float inputWAS[] =  { -50.00, -45.0, -40.0, -35.0, -30.0, -25.0, -20.0, -15.0, -10.0, -5.0, 0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0 };  //Input WAS do not adjust
+float outputWAS[] = { -50.00, -45.0, -40.0, -35.0, -30.0, -25.0, -20.0, -15.0, -10.0, -5.0, 0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0 };
 
 /////////////////////////////////////////////
 
 // if not in eeprom, overwrite
-#define EEP_Ident 2402
+#define EEP_Ident 2400
 
 //   ***********  Motor drive connections  **************888
 //Connect ground only for cytron, Connect Ground and +5v for IBT2
@@ -34,6 +48,7 @@
 
 //Not Connected for Cytron, Right PWM for IBT2
 #define PWM2_RPWM  33
+#define PWM2_OPT  37
 
 //--------------------------- Switch Input Pins ------------------------
 #define STEERSW_PIN 6
@@ -51,30 +66,27 @@
 #include "zADS1115.h"
 ADS1115_lite adc(ADS1115_DEFAULT_ADDRESS);     // Use this for the 16-bit version ADS1115
 
-#include <IPAddress.h>
-#include "BNO08x_AOG.h"
 #include <FlexCAN_T4.h>
+FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_256> R_Bus;    //Steering Valve Bus
 FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_256> V_Bus;    //Steering Valve Bus
-CAN_message_t msgi;
-uint32_t Time;                  //Time Arduino has been running
-uint32_t relayTime;             //Time to keep "Button Pressed" from CAN Message
+
 boolean engageCAN = 0;          //Variable for Engage from CAN
+uint32_t Time;                  //Time Arduino has been running
+uint32_t myTime;
+uint32_t relayTime;             //Time to keep "Button Pressed" from CAN Message
+uint32_t lastpush;
+long unsigned int lastIdActive = 0;
+uint8_t RBUSRearHitch = 250;    //Variable for hitch height from KBUS (0-250 *0.4 = 0-100%) - CaseIH tractor bus
 boolean workCAN = 0;            //Variable for Workswitch from CAN
-uint8_t ISORearHitch = 250;     //Variable for hitch height from ISOBUS (0-250 *0.4 = 0-100%)
-uint8_t KBUSRearHitch = 250;    //Variable for hitch height from KBUS (0-250 *0.4 = 0-100%) - CaseIH tractor bus
 
-boolean ShowCANData = 0;        //Variable for Showing CAN Data
+#include <IPAddress.h>
 
-#ifdef ARDUINO_TEENSY41
 // ethernet
 #include <NativeEthernet.h>
 #include <NativeEthernetUdp.h>
-#endif
 
-#ifdef ARDUINO_TEENSY41
 //uint8_t Ethernet::buffer[200]; // udp send and receive buffer
 uint8_t autoSteerUdpData[UDP_TX_PACKET_MAX_SIZE];  // Buffer For Receiving UDP Data
-#endif
 
 //loop time variables in microseconds
 const uint16_t LOOP_TIME = 25;  //40Hz
@@ -168,21 +180,26 @@ struct Setup {
   uint8_t IsUseY_Axis = 0;     //Set to 0 to use X Axis, 1 to use Y avis
 }; Setup steerConfig;               // 9 bytes
 
-struct IMU {
-  uint8_t CanBauds = 1;              //1 = 125k(default settings of canimu module), 2 = 250k, 3 = 500k, 4 = 1000k
-  uint8_t UseImuCan = 0;
-//stockage pour fonctions futures
-}; IMU canimu;
+//Variables for config - 0 is false  
+struct Configm {
+    uint8_t raiseTime = 2;
+    uint8_t lowerTime = 4;
+    uint8_t enableToolLift = 0;
+    uint8_t isRelayActiveHigh = 0; //if zero, active low (default)
 
+    uint8_t user1 = 0; //user defined values set in machine tab
+    uint8_t user2 = 0;
+    uint8_t user3 = 0;
+    uint8_t user4 = 0;
 
-
-//  fin can imu 
+};  Configm aogConfig;   //4 bytes
 
 void steerConfigInit()
 {
   if (steerConfig.CytronDriver) 
   {
-    pinMode(PWM2_RPWM, OUTPUT);
+    pinMode(PWM2_RPWM, OUTPUT);    
+    pinMode(PWM2_OPT, OUTPUT);
   }
 }
 
@@ -203,17 +220,20 @@ void autosteerSetup()
   if (PWM_Frequency == 0)
   {
     analogWriteFrequency(PWM1_LPWM, 490);
-    analogWriteFrequency(PWM2_RPWM, 490);
+    analogWriteFrequency(PWM2_RPWM, 490);    
+    analogWriteFrequency(PWM2_OPT, 490);
   }
   else if (PWM_Frequency == 1)
   {
     analogWriteFrequency(PWM1_LPWM, 122);
     analogWriteFrequency(PWM2_RPWM, 122);
+    analogWriteFrequency(PWM2_OPT, 122);
   }
   else if (PWM_Frequency == 2)
   {
     analogWriteFrequency(PWM1_LPWM, 3921);
     analogWriteFrequency(PWM2_RPWM, 3921);
+    analogWriteFrequency(PWM2_OPT, 3921);
   }
 
   //keep pulled high and drag low to activate, noise free safe
@@ -251,16 +271,16 @@ void autosteerSetup()
     EEPROM.put(0, EEP_Ident);
     EEPROM.put(10, steerSettings);
     EEPROM.put(40, steerConfig);
-    EEPROM.put(60, networkAddress); 
-    EEPROM.put(90, canimu);   
+    EEPROM.put(60, networkAddress);
+    EEPROM.get(70, aogConfig);
   }
   else
   {
     EEPROM.get(10, steerSettings);     // read the Settings
     EEPROM.get(40, steerConfig);
-    EEPROM.get(60, networkAddress); 
-    EEPROM.put(90, canimu);
-  }
+    EEPROM.get(60, networkAddress);
+    EEPROM.get(70, aogConfig); 
+ }
 
   steerSettingsInit();
   steerConfigInit();
@@ -269,8 +289,8 @@ void autosteerSetup()
   {
     Serial.println("Autosteer running, waiting for AgOpenGPS");
     // Autosteer Led goes Red if ADS1115 is found
-    //digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
-    //digitalWrite(AUTOSTEER_STANDBY_LED, 1);
+    digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
+    digitalWrite(AUTOSTEER_STANDBY_LED, 1);
   }
   else
   {
@@ -282,16 +302,15 @@ void autosteerSetup()
 
   adc.setSampleRate(ADS1115_REG_CONFIG_DR_128SPS); //128 samples per second
   adc.setGain(ADS1115_REG_CONFIG_PGA_6_144V);
-  delay (3000);
-  CAN_setup();   //Run the Setup void (CAN page)
+        delay (3000);
+      CAN_setup(); 
+
 }// End of Setup
 
 void autosteerLoop()
 {
-#ifdef ARDUINO_TEENSY41
+
   ReceiveUdp();
-#endif
-  //Serial.println("AutoSteer loop");
 
   // Loop triggers every 100 msec and sends back gyro heading, and roll, steer angle etc
   currentTime = systick_millis_count;
@@ -304,61 +323,79 @@ void autosteerLoop()
     encEnable = true;
 
     //If connection lost to AgOpenGPS, the watchdog will count up and turn off steering
-    if (watchdogTimer++ > 250) watchdogTimer = WATCHDOG_FORCE_VALUE;
+    if (watchdogTimer++ > 250)
+    {
+        watchdogTimer = WATCHDOG_FORCE_VALUE;
+        steerSwitch = 1; // reset values like it turned off
+        currentState = 1;
+    }
 
     //read all the switches
-    workSwitch = digitalRead(WORKSW_PIN);  // read work switch
+    workSwitch = digitalRead(WORKSW_PIN);       // read work switch
+    if (workCAN == 1) workSwitch = 0;         // If CAN workswitch is on, set workSwitch ON
 
-    if (steerConfig.SteerSwitch == 1)         //steer switch on - off
+    //Engage steering via 1 PCB Button or 2 Tablet
+
+    // 1 PCB Button pressed?
+    reading = digitalRead(STEERSW_PIN);
+
+    if (steerConfig.SteerSwitch == 1)
     {
-      steerSwitch = digitalRead(STEERSW_PIN); //read auto steer enable switch open = 0n closed = Off
-    }
-      else if(steerConfig.SteerButton == 1)     //steer Button momentary
-      {
-        reading = digitalRead(STEERSW_PIN); 
-
-        //CAN
-        if (engageCAN == 1) reading = 0;              //CAN Engage is ON (Button is Pressed)
-              
-            if (reading == LOW && previous == HIGH) 
-            {
-                if (currentState == 1)
-                {
-                currentState = 0;
-                steerSwitch = 0;
-                }
-                else
-                {
-                currentState = 1;
-                steerSwitch = 1;
-                }
-            }      
+        // Switch is off so reset ready for next switch on
+        if (reading == HIGH)
+        {
+            currentState = 1;
+            steerSwitch = 1;
             previous = reading;
-        
-           //--------CAN CutOut--------------------------
-      }
-    else                                      // No steer switch and no steer button
-    {
-      // So set the correct value. When guidanceStatus = 1,
-      // it should be on because the button is pressed in the GUI
-      // But the guidancestatus should have set it off first
-      if (guidanceStatusChanged && guidanceStatus == 1 && steerSwitch == 1 && previous == 0)
-      {
-        steerSwitch = 0;
-        previous = 1;
-      }
-
-      // This will set steerswitch off and make the above check wait until the guidanceStatus has gone to 0
-      if (guidanceStatusChanged && guidanceStatus == 0 && steerSwitch == 0 && previous == 1)
-      {
-        steerSwitch = 1;
-        previous = 0;
-      }
+        }
     }
 
+    // 2 Has tablet button been pressed?
+    if (guidanceStatusChanged)
+    {
+        if (guidanceStatus == 1)    //Must have changed Off >> On
+        {
+            currentState = 0;
+            steerSwitch = 0;
+        }
+    }
+
+    // If AOG has stopped steering, wait then turn off steerswitch ready for next engage.
+    static int switchCounter = 0;
+
+    if (steerSwitch == 0 && guidanceStatus == 0)
+    {
+        if (switchCounter++ > 30)
+        {
+            currentState = 1;
+            steerSwitch = 1;
+        }
+    }
+    else
+    {
+        switchCounter = 0;
+    }
+if (engageCAN) reading = LOW;              //CAN Engage is ON (Button is Pressed)
+    // Arduino software button code
+    if (reading == LOW && previous == HIGH)
+    {
+        if (currentState == 1)
+        {
+            currentState = 0;
+            steerSwitch = 0;
+        }
+        else
+        {
+            currentState = 1;
+            steerSwitch = 1;
+        }
+    }
+    previous = reading;
+
+    // Encoder sensor?
     if (steerConfig.ShaftEncoder && pulseCount >= steerConfig.PulseCountMax)
     {
-      steerSwitch = 1; // reset values like it turned off
+      steerSwitch = 1; 
       currentState = 1;
       previous = 0;
     }
@@ -371,10 +408,9 @@ void autosteerLoop()
       sensorReading = sensorReading * 0.6 + sensorSample * 0.4;
       if (sensorReading >= steerConfig.PulseCountMax)
       {
-          steerSwitch = 1; // reset values like it turned off
+          steerSwitch = 1; 
           currentState = 1;
           previous = 0;
-        engageCAN = 0;
       }
     }
 
@@ -388,26 +424,17 @@ void autosteerLoop()
 
       if (sensorReading >= steerConfig.PulseCountMax)
       {
-          steerSwitch = 1; // reset values like it turned off
+          steerSwitch = 1; 
           currentState = 1;
           previous = 0;
-          engageCAN = 0;
       }
     }
 
-    remoteSwitch = digitalRead(REMOTE_PIN); //read auto steer enable switch open = 0n closed = Off
+    remoteSwitch = digitalRead(REMOTE_PIN);
     switchByte = 0;
-    switchByte |= (remoteSwitch << 2); //put remote in bit 2
+    switchByte |= (remoteSwitch << 2);  //put remote in bit 2
     switchByte |= (steerSwitch << 1);   //put steerswitch status in bit 1 position
     switchByte |= workSwitch;
-
-    /*
-      #if Relay_Type == 1
-        SetRelays();       //turn on off section relays
-      #elif Relay_Type == 2
-        SetuTurnRelays();  //turn on off uTurn relays
-      #endif
-    */
 
     //get steering position
     if (steerConfig.SingleInputWAS)   //Single Input ADS
@@ -447,6 +474,19 @@ void autosteerLoop()
     //Ackerman fix
     if (steerAngleActual < 0) steerAngleActual = (steerAngleActual * steerSettings.AckermanFix);
 
+    //WAS fault or over 25km, cut steering
+    if ((steerAngleActual < inputWAS[0]) || (steerAngleActual > inputWAS[20]) || gpsSpeed > 25)
+    {
+        steerSwitch = 1; // reset values like it turned off
+        currentState = 1;
+        previous = 0;
+        watchdogTimer = WATCHDOG_FORCE_VALUE;
+    }
+
+    //Map WAS
+    float mappedWAS = multiMap<float>(steerAngleActual, inputWAS, outputWAS, 21);
+    steerAngleActual = mappedWAS;
+
     if (watchdogTimer < WATCHDOG_THRESHOLD)
     {
       //Enable H Bridge for IBT2, hyd aux, etc for cytron
@@ -455,10 +495,12 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 0);
+          digitalWrite(PWM2_OPT, 0);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 1);
+          digitalWrite(PWM2_OPT, 1);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 1);
@@ -466,12 +508,15 @@ void autosteerLoop()
       steerAngleError = steerAngleActual - steerAngleSetPoint;   //calculate the steering error
       //if (abs(steerAngleError)< steerSettings.lowPWM) steerAngleError = 0;
 
+      //Don't turn wheels if speed less than 0.3km/hr
+      if (gpsSpeed < 0.2) steerAngleError = 0;
+
       calcSteeringPID();  //do the pid
       motorDrive();       //out to motors the pwm value
       // Autosteer Led goes GREEN if autosteering
 
-      //digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
-      //digitalWrite(AUTOSTEER_STANDBY_LED, 0);
+      digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
+      digitalWrite(AUTOSTEER_STANDBY_LED, 0);
     }
     else
     {
@@ -482,10 +527,12 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 1);
+          digitalWrite(PWM2_OPT, 1);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 0);
+          digitalWrite(PWM2_OPT, 0);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 0); //IBT2
@@ -494,8 +541,8 @@ void autosteerLoop()
       motorDrive(); //out to motors the pwm value
       pulseCount = 0;
       // Autosteer Led goes back to RED when autosteering is stopped
-      //digitalWrite (AUTOSTEER_STANDBY_LED, 1);
-      //digitalWrite (AUTOSTEER_ACTIVE_LED, 0);
+      digitalWrite (AUTOSTEER_STANDBY_LED, 1);
+      digitalWrite (AUTOSTEER_ACTIVE_LED, 0);
     }
   } //end of timed loop
 
@@ -538,22 +585,13 @@ void autosteerLoop()
     }
   }
 VBus_Receive();
+//RBus_Receive();
 } // end of main loop
 
-int currentRoll = 0;
-int rollLeft = 0;
-int steerLeft = 0;
 
-#ifdef ARDUINO_TEENSY41
 // UDP Receive
 void ReceiveUdp()
 {
-    // When ethernet is not running, return directly. parsePacket() will block when we don't
-    if (!Ethernet_running)
-    {
-        return;
-    }
-
     uint16_t len = Eth_udpAutoSteer.parsePacket();
 
     // if (len > 0)
@@ -587,7 +625,7 @@ void ReceiveUdp()
 
                 //Serial.println(gpsSpeed);
 
-                if ((bitRead(guidanceStatus, 0) == 0) || (gpsSpeed < 0.1) || (steerSwitch == 1))
+                if ((bitRead(guidanceStatus, 0) == 0) /* || (gpsSpeed < 0.1)*/ || (steerSwitch == 1))
                 {
                     watchdogTimer = WATCHDOG_FORCE_VALUE; //turn off steering motor
                 }
@@ -744,7 +782,7 @@ void ReceiveUdp()
 
                 SendUdp(helloFromAutoSteer, sizeof(helloFromAutoSteer), Eth_ipDestination, portDestination);
                 }
-                if(useBNO08x || useCMPS)
+                if(useBNO08xRVC)
                 {
                  SendUdp(helloFromIMU, sizeof(helloFromIMU), Eth_ipDestination, portDestination); 
                 }
@@ -793,10 +831,30 @@ void ReceiveUdp()
                     SendUdp(scanReply, sizeof(scanReply), ipDest, portDest);
                 }
             }
+            else if (autoSteerUdpData[3] == 238)
+            {
+                aogConfig.raiseTime = autoSteerUdpData[5];
+                aogConfig.lowerTime = autoSteerUdpData[6];
+                aogConfig.enableToolLift = autoSteerUdpData[7];
+
+                //set1 
+                uint8_t sett = autoSteerUdpData[8];  //setting0     
+                if (bitRead(sett, 0)) aogConfig.isRelayActiveHigh = 1; else aogConfig.isRelayActiveHigh = 0;
+
+                aogConfig.user1 = autoSteerUdpData[9];
+                aogConfig.user2 = autoSteerUdpData[10];
+                aogConfig.user3 = autoSteerUdpData[11];
+                aogConfig.user4 = autoSteerUdpData[12];
+
+                //crc
+
+                //save in EEPROM and restart
+                EEPROM.put(6, aogConfig);
+                //resetFunc();
+            }
         } //end if 80 81 7F
     }
 }
-#endif
 
 #ifdef ARDUINO_TEENSY41
 void SendUdp(uint8_t *data, uint8_t datalen, IPAddress dip, uint16_t dport)
@@ -815,4 +873,24 @@ void EncoderFunc()
     pulseCount++;
     encEnable = false;
   }
+}
+
+//Rob Tillaart, https://github.com/RobTillaart/MultiMap
+template<typename T>
+T multiMap(T value, T* _in, T* _out, uint8_t size)
+{
+    // take care the value is within range
+    // value = constrain(value, _in[0], _in[size-1]);
+    if (value <= _in[0]) return _out[0];
+    if (value >= _in[size - 1]) return _out[size - 1];
+
+    // search right interval
+    uint8_t pos = 1;  // _in[0] already tested
+    while (value > _in[pos]) pos++;
+
+    // this will handle all exact "points" in the _in array
+    if (value == _in[pos]) return _out[pos];
+
+    // interpolate in the right segment for the rest
+    return (value - _in[pos - 1]) * (_out[pos] - _out[pos - 1]) / (_in[pos] - _in[pos - 1]) + _out[pos - 1];
 }

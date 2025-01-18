@@ -1,296 +1,265 @@
-float decimal_input;
-float unit_input;
-
-int32_t vbauds;
 void CAN_setup (void) {
-if (canimu.CanBauds == 1)
-  {
-    vbauds = 125000;
-  }
-else if (canimu.CanBauds == 2)
-  {
-    vbauds = 250000;
-  }
-else if (canimu.CanBauds == 3)
-  {
-    vbauds = 500000;
-  }
-else if (canimu.CanBauds == 4)
-  {
-    vbauds = 1000000;
-  }
+
 //V_Bus is CAN-3 and is the Steering BUS
   V_Bus.begin();
-  V_Bus.setBaudRate(vbauds);
-  //V_Bus.enableFIFO();
-  //V_Bus.setFIFOFilter(REJECT_ALL);
-  //V_Bus.setFIFOFilter(0, 0x18FF1A03, EXT);  //Claas Curve Data & Valve State Message
+  V_Bus.setBaudRate(250000);
+  R_Bus.begin();
+  R_Bus.setBaudRate(250000);
+  V_Bus.enableFIFO();
+  V_Bus.setFIFOFilter(REJECT_ALL);
+  switch (Brand)
+    {
+      case 0:
+          V_Bus.setFIFOFilter(0, 0x18EF1CD2, EXT);  //Claas Engage Message
+          V_Bus.setFIFOFilter(1, 0x1CFFE6D2, EXT);  //Claas Work Message (CEBIS Screen MR Models)
+          break;
+      case 1:
+          V_Bus.setFIFOFilter(0, 0x18EF1C32, EXT);  //Valtra Engage Message
+          V_Bus.setFIFOFilter(1, 0x18EF1CFC, EXT);  //Mccormick Engage Message
+          V_Bus.setFIFOFilter(2, 0x18EF1C00, EXT);  //MF Engage Message
+        break;
+      case 2:
+          V_Bus.setFIFOFilter(0, 0x14FF7706, EXT);
+          V_Bus.setFIFOFilter(1, 0x18FE4523, EXT);
+        break;
+      case 3:
+          V_Bus.setFIFOFilter(0, 0x0CEF2CF0, EXT);
+        break;
+      case 4:
+          V_Bus.setFIFOFilter(0, 0x18EFAB27, EXT);
+        break;
+      default:
+        Serial.println("No brand selected");
+        break;
+    }  
+//  R_Bus.enableFIFO();
+//  R_Bus.setFIFOFilter(REJECT_ALL);
+//  R_Bus.setFIFOFilter(0, 0x18FE4523, EXT);
   delay(500);
 } //End CAN SETUP
 
-//---Receive K_Bus message
+//---Receive V_Bus message
 void VBus_Receive()
 {
-CAN_message_t msgiv;
-      if ( V_Bus.read(msgiv) ) 
+  CAN_message_t msgi;
+      if ( V_Bus.read(msgi) )
+        {
+        if (Brand == 0)
+        {
+          //**Engage Message**
+          if (msgi.id == 0x18EF1CD2)
           {
-            if (msgiv.id == 0x18FF1A03)
-              {        
-                if ((msgiv.buf[2])== 0x15)
+            if ((msgi.buf[1])== 0 && (msgi.buf[2])== 0)   //Ryan Stage5 Models?
+            {
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = bitRead(msgi.buf[0],2);
+                              //engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }      
+            }
+
+            else if ((msgi.buf[0]) == 39 && (msgi.buf[2]) == 241)   //Ryan MR Models?
+              {
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = bitRead(msgi.buf[1],0);
+                              //engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }      
+              }
+  
+            else if ((msgi.buf[1])== 0 && (msgi.buf[2])== 125) //Tony Non MR Models? Ryan Mod to bit read engage bit
+              {
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = bitRead(msgi.buf[0],2);
+                              //engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }         
+              }
+          } 
+
+          //**Work Message**
+          if (msgi.id == 0x1CFFE6D2)
+          {
+            if ((msgi.buf[0])== 144)
+            {
+             workCAN = bitRead(msgi.buf[6],0);
+            }
+          }
+        }
+
+
+        if (Brand == 1)
+        {
+            if (msgi.id == 0x18EF1C32)
+            {
+                if ((msgi.buf[0])== 15 && (msgi.buf[1])== 96 && (msgi.buf[2])== 1)
+                {   
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }
+                }
+            } 
+
+            if (msgi.id == 0x18EF1CFC)//Mccormick engage message
+            {
+                if ((msgi.buf[0])== 15 && (msgi.buf[1])== 96 && (msgi.buf[3])== 255)
+                {   
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }
+                }
+            } 
+            if (msgi.id == 0x18EF1C00)//MF engage message
+            {
+                if ((msgi.buf[0])== 15 && (msgi.buf[1])== 96 && (msgi.buf[2])== 1)
+                {   
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }
+                }
+            } 
+
+            
+        }
+        
+
+          
+          if (Brand == 2)
+            {
+              if (msgi.id == 0x14FF7706)
+                {
+                  if ((msgi.buf[0])== 130 && (msgi.buf[1])== 1)
+                    {
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                         else
+                            {
+                              engageCAN = false;
+                              lastIdActive = 0;
+                            }
+                      }
+                  }
+                  if ((msgi.buf[0])== 178 && (msgi.buf[1])== 4)
+                    {
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }
+                  }
+                }
+             if (msgi.id == 0x18FE4523)
+                {
+                  RBUSRearHitch = (msgi.buf[0]);
+                  if (RBUSRearHitch < aogConfig.user1) workCAN = 1;
+                  else workCAN = 0;
+                }
+            }
+
+
+        if (Brand == 4)
+          {
+              if (msgi.id == 0x18EFAB27)
+              {
+                  if ((msgi.buf[0])== 15 && (msgi.buf[1])== 96 && (msgi.buf[2])== 1)
                   {
-                    Time = millis();
-                    engageCAN = 1;
-                    relayTime = ((millis() + 1000));
-                   }
-
-               }
+                      myTime = millis();
+                      if(myTime - lastpush > 1500)
+                        {
+                          if (lastIdActive == 0)
+                            {
+                              Time = millis();
+                              engageCAN = true;
+                              lastIdActive = 1;
+                              relayTime = ((millis() + 1000));
+                              lastpush = Time;
+                            }
+                      }
+                  }
+              }    
+     
           }
-  if (msgiv.id == 0x585)
-    {
-      decimal_input = (msgiv.buf[2]);
-      decimal_input = decimal_input /152 ;
-      unit_input = (msgiv.buf[1]);
-      unit_input = unit_input *1000;
-      unit_input = unit_input /152;
-      roll = unit_input + decimal_input;
-          if (msgiv.buf[0] >= 10)
-          {
-            roll *= -1;
-          }
-          //Serial.println(roll);
-    }
-}
-
-
-
-void serv() {
-  Serial.println("\r\nAgOpenGPS CANBUS Service Tool Mode:");
-  Help();
-   while (Service == 1) 
-  { 
-      if (Serial.available())   // Read Data From Serail Monitor 
-      {    
-        byte b = Serial.read();
-        if ( b == '?') Help();          
-        else if ( b == 'X') Service = 0; //Exit Service Mode
-        else if ( b == '0') startsetup();
-        else if ( b == '1') startsetupp();
-        else if ( b == '2') activate();
-        else if ( b == '3') deactivate();
-        else
-        {
-          Serial.println("No command, send ? for help");
-          Serial.println(" ");
-          delay(50);
         }
-
-        while (Serial.available())
-        {
-        Serial.read();                //Clear the serial buffer
-        }
-      }
-  }
 }
 
-void Help() {
-  Serial.println("X = service mode exit");
-  Serial.println("0 = start setup with 250k baud");
-  Serial.println("1 = start setup with 500k baud");
-  Serial.println("2 = can imu activation in ino");
-  Serial.println("3 = can imu desactivation in ino");
-  }
-
-void startsetup() {
-  delay(2000);
-  dixhtz();
-  delay(2000);
-  relativeangle();
-  delay(2000);
-  save();
-  delay(2000);
-  setcanbaudrate();
-  }
-
-void startsetupp() {
-  delay(2000);
-  dixhtz();
-  delay(2000);
-  relativeangle();
-  delay(2000);
-  save();
-  delay(2000);
-  setcanbaudratee();
-  }
-
-void dixhtz() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x0c;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x02;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  Serial.println("IMU Can set to 10 htz");
-}
-
-void vgthtz() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x0c;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x03;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  Serial.println("IMU Can set to 20 htz");
-}
-
-void vgtcqhtz() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x0c;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x04;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  Serial.println("IMU Can set to 25 htz");
-}
-
-void cqthtz() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x0c;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x05;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  Serial.println("IMU Can set to 50 htz");
-}
-
-void cthtz() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x0c;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x06;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  Serial.println("IMU Can set to 100 htz");
-}
-
-void relativeangle() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x05;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x01;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  Serial.println("IMU Can set in relative angle mode");
-}
-
-void save() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x0a;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x00;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  Serial.println("IMU settings saved");
-}
-
-void setcanbaudrate() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x20;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x02;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-  
-  canimu.CanBauds = 2;
-   //store in EEPROM
-  EEPROM.put(90, canimu);
-  
-  Serial.println("CAN bauds set to 250k");
-}
-
-void setcanbaudratee() {
-  msgi.id = 0x605;
-  msgi.flags.extended = false;
-  msgi.len = 8;
-  msgi.buf[0] = 0x40;
-  msgi.buf[1] = 0x20;
-  msgi.buf[2] = 0x10;
-  msgi.buf[3] = 0x00;
-  msgi.buf[4] = 0x01;
-  msgi.buf[5] = 0x00;
-  msgi.buf[6] = 0x00;
-  msgi.buf[7] = 0x00;
-  V_Bus.write(msgi);
-
-    canimu.CanBauds = 3;
-   //store in EEPROM
-  EEPROM.put(90, canimu);
-  
-  Serial.println("CAN bauds set to 500k");
-}
-
-void activate() {
-      canimu.UseImuCan = 1;
-   //store in EEPROM
-  EEPROM.put(90, canimu);
-  }
-
-void deactivate() {
-      canimu.UseImuCan = 0;
-   //store in EEPROM
-  EEPROM.put(90, canimu);
-  }
+//---Receive R_Bus message
+//void RBus_Receive()
+//{
+//  CAN_message_t msgr;
+//  if ( R_Bus.read(msgr) )
+//      {
+//        if (msgr.id == 0x18FE4523)
+//          {
+//            RBUSRearHitch = (msgr.buf[0]);
+//            if (RBUSRearHitch < aogConfig.user1) workCAN = 1;
+//            else workCAN = 0;
+//          }
+//      }
+//}

@@ -1,6 +1,5 @@
 void EthernetStart()
 {
-#ifdef ARDUINO_TEENSY41
   // start the Ethernet connection:
   Serial.println("Initializing ethernet with static IP address");
 
@@ -38,8 +37,6 @@ void EthernetStart()
   Serial.print("IP set Manually: ");
   Serial.println(Ethernet.localIP());
 
-  Ethernet_running = true;
-
   Eth_ipDestination[0] = Eth_myip[0];
   Eth_ipDestination[1] = Eth_myip[1];
   Eth_ipDestination[2] = Eth_myip[2];
@@ -69,5 +66,4 @@ void EthernetStart()
     Serial.print("Ethernet AutoSteer UDP listening to & send from port: ");
     Serial.println(AOGAutoSteerPort);
   }
- #endif
 }
