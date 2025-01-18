@@ -139,6 +139,74 @@ void dixhtz() {
   Serial.println("IMU Can set to 10 htz");
 }
 
+void vgthtz() {
+  msgi.id = 0x605;
+  msgi.flags.extended = false;
+  msgi.len = 8;
+  msgi.buf[0] = 0x40;
+  msgi.buf[1] = 0x0c;
+  msgi.buf[2] = 0x10;
+  msgi.buf[3] = 0x00;
+  msgi.buf[4] = 0x03;
+  msgi.buf[5] = 0x00;
+  msgi.buf[6] = 0x00;
+  msgi.buf[7] = 0x00;
+  V_Bus.write(msgi);
+  
+  Serial.println("IMU Can set to 20 htz");
+}
+
+void vgtcqhtz() {
+  msgi.id = 0x605;
+  msgi.flags.extended = false;
+  msgi.len = 8;
+  msgi.buf[0] = 0x40;
+  msgi.buf[1] = 0x0c;
+  msgi.buf[2] = 0x10;
+  msgi.buf[3] = 0x00;
+  msgi.buf[4] = 0x04;
+  msgi.buf[5] = 0x00;
+  msgi.buf[6] = 0x00;
+  msgi.buf[7] = 0x00;
+  V_Bus.write(msgi);
+  
+  Serial.println("IMU Can set to 25 htz");
+}
+
+void cqthtz() {
+  msgi.id = 0x605;
+  msgi.flags.extended = false;
+  msgi.len = 8;
+  msgi.buf[0] = 0x40;
+  msgi.buf[1] = 0x0c;
+  msgi.buf[2] = 0x10;
+  msgi.buf[3] = 0x00;
+  msgi.buf[4] = 0x05;
+  msgi.buf[5] = 0x00;
+  msgi.buf[6] = 0x00;
+  msgi.buf[7] = 0x00;
+  V_Bus.write(msgi);
+  
+  Serial.println("IMU Can set to 50 htz");
+}
+
+void cthtz() {
+  msgi.id = 0x605;
+  msgi.flags.extended = false;
+  msgi.len = 8;
+  msgi.buf[0] = 0x40;
+  msgi.buf[1] = 0x0c;
+  msgi.buf[2] = 0x10;
+  msgi.buf[3] = 0x00;
+  msgi.buf[4] = 0x06;
+  msgi.buf[5] = 0x00;
+  msgi.buf[6] = 0x00;
+  msgi.buf[7] = 0x00;
+  V_Bus.write(msgi);
+  
+  Serial.println("IMU Can set to 100 htz");
+}
+
 void relativeangle() {
   msgi.id = 0x605;
   msgi.flags.extended = false;
