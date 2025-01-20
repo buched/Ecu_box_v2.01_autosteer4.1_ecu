@@ -60,14 +60,14 @@ void GGA_Handler() //Rec'd GGA
     // time of last DGPS update
     parser.getArg(12, ageDGPS);
 
-    if (blink)
-    {
-        digitalWrite(GGAReceivedLED, HIGH);
-    }
-    else
-    {
-        digitalWrite(GGAReceivedLED, LOW);
-    }
+//    if (blink)
+//    {
+//        digitalWrite(GGAReceivedLED, HIGH);
+//    }
+//    else
+//    {
+//        digitalWrite(GGAReceivedLED, LOW);
+//    }
 
     blink = !blink;
     bnoTrigger = true;
@@ -84,15 +84,15 @@ void GGA_Handler() //Rec'd GGA
         dualReadyGGA = false;  //Force dual GGA ready false because we just sent it to AgIO based off the IMU data
         if (!useDual)
         {
-            digitalWrite(GPSRED_LED, HIGH);    //Turn red GPS LED ON, we have GGA and must have a IMU     
-            digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF     
+            //digitalWrite(GPSRED_LED, HIGH);    //Turn red GPS LED ON, we have GGA and must have a IMU     
+            //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF     
         }
     }
 
     else if (!useDual && !useBNO08xRVC) 
     {
-        digitalWrite(GPSRED_LED, blink);   //Flash red GPS LED, we have GGA but no IMU or dual
-        digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF
+        //digitalWrite(GPSRED_LED, blink);   //Flash red GPS LED, we have GGA but no IMU or dual
+        //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF
         itoa(65535, imuHeading, 10);       //65535 is max value to stop AgOpen using IMU in Panda
         BuildNmea();
     }

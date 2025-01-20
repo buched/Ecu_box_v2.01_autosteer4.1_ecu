@@ -41,13 +41,13 @@ const int32_t baudGPS = 460800;
 #define RAD_TO_DEG_X_10 572.95779513082320876798154814105
 
 //Status LED's
-#define GGAReceivedLED 13         //Teensy onboard LED
-#define Power_on_LED 5            //Red
-#define Ethernet_Active_LED 6     //Green
-#define GPSRED_LED 9              //Red (Flashing = NO IMU or Dual, ON = GPS fix with IMU)
-#define GPSGREEN_LED 10           //Green (Flashing = Dual bad, ON = Dual good)
-#define AUTOSTEER_STANDBY_LED 11  //Red
-#define AUTOSTEER_ACTIVE_LED 12   //Green
+//#define GGAReceivedLED 13         //Teensy onboard LED
+//#define Power_on_LED 5            //Red
+//#define Ethernet_Active_LED 6     //Green
+//#define GPSRED_LED 9              //Red (Flashing = NO IMU or Dual, ON = GPS fix with IMU)
+//#define GPSGREEN_LED 10           //Green (Flashing = Dual bad, ON = Dual good)
+//#define AUTOSTEER_STANDBY_LED 11  //Red
+//#define AUTOSTEER_ACTIVE_LED 12   //Green
 
 /*****************************************************************/
 
@@ -142,13 +142,13 @@ void setup()
     Serial.print("CPU speed set to: ");
     Serial.println(F_CPU_ACTUAL);
 
-    pinMode(GGAReceivedLED, OUTPUT);
-    pinMode(Power_on_LED, OUTPUT);
-    pinMode(Ethernet_Active_LED, OUTPUT);
-    pinMode(GPSRED_LED, OUTPUT);
-    pinMode(GPSGREEN_LED, OUTPUT);
-    pinMode(AUTOSTEER_STANDBY_LED, OUTPUT);
-    pinMode(AUTOSTEER_ACTIVE_LED, OUTPUT);
+    //pinMode(GGAReceivedLED, OUTPUT);
+    //pinMode(Power_on_LED, OUTPUT);
+    //pinMode(Ethernet_Active_LED, OUTPUT);
+    //pinMode(GPSRED_LED, OUTPUT);
+    //pinMode(GPSGREEN_LED, OUTPUT);
+    //pinMode(AUTOSTEER_STANDBY_LED, OUTPUT);
+    //pinMode(AUTOSTEER_ACTIVE_LED, OUTPUT);
     
     // the dash means wildcard
     parser.setErrorHandler(errorHandler);
@@ -261,7 +261,7 @@ void loop()
         if (calcChecksum())
         {
             //if(deBug) Serial.println("RelPos Message Recived");
-            digitalWrite(GPSRED_LED, LOW);   //Turn red GPS LED OFF (we are now in dual mode so green LED)
+            //digitalWrite(GPSRED_LED, LOW);   //Turn red GPS LED OFF (we are now in dual mode so green LED)
             useDual = true;
             relPosDecode();
         }
@@ -283,8 +283,8 @@ void loop()
     //GGA timeout, turn off GPS LED's etc
     if (GGAReadyTime > 10000) //GGA age over 10sec
     {
-        digitalWrite(GPSRED_LED, LOW);
-        digitalWrite(GPSGREEN_LED, LOW);
+        //digitalWrite(GPSRED_LED, LOW);
+        //digitalWrite(GPSGREEN_LED, LOW);
         useDual = false;
     }
 
@@ -293,13 +293,13 @@ void loop()
         if (Ethernet.linkStatus() == LinkON)
         {
             ethernetLinkCheck = 0;
-            digitalWrite(Power_on_LED, 0);
-            digitalWrite(Ethernet_Active_LED, 1);
+            //digitalWrite(Power_on_LED, 0);
+            //digitalWrite(Ethernet_Active_LED, 1);
         }
         else
         {
-            digitalWrite(Power_on_LED, 1);
-            digitalWrite(Ethernet_Active_LED, 0);
+            //digitalWrite(Power_on_LED, 1);
+            //digitalWrite(Ethernet_Active_LED, 0);
         }
     }
 
