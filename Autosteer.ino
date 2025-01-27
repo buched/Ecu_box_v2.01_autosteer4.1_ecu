@@ -39,7 +39,7 @@
 //--------------------------- Switch Input Pins ------------------------
 #define STEERSW_PIN 6
 #define WORKSW_PIN 7
-#define REMOTE_PIN 13
+#define REMOTE_PIN 8
 
 //Define sensor pin for current or pressure sensor
 #define CURRENT_SENSOR_PIN A17
@@ -64,6 +64,9 @@ uint8_t ISORearHitch = 250;     //Variable for hitch height from ISOBUS (0-250 *
 uint8_t KBUSRearHitch = 250;    //Variable for hitch height from KBUS (0-250 *0.4 = 0-100%) - CaseIH tractor bus
 boolean Service = 0;            //Variable for Danfoss Service Tool Mode
 boolean ShowCANData = 0;        //Variable for Showing CAN Data
+uint32_t myTime;
+uint32_t lastpush;
+long unsigned int lastIdActive = 0;
 
 #ifdef ARDUINO_TEENSY41
 // ethernet
@@ -310,7 +313,7 @@ void autosteerLoop()
         reading = digitalRead(STEERSW_PIN); 
 
         //CAN
-        if (engageCAN == 1) reading = 0;              //CAN Engage is ON (Button is Pressed)
+        if (engageCAN) reading = LOW;              //CAN Engage is ON (Button is Pressed)
               
             if (reading == LOW && previous == HIGH) 
             {
