@@ -171,6 +171,20 @@ struct Setup {
   uint8_t IsUseY_Axis = 0;     //Set to 0 to use X Axis, 1 to use Y avis
 }; Setup steerConfig;               // 9 bytes
 
+//Variables for config - 0 is false  
+struct Configm {
+    uint8_t raiseTime = 2;
+    uint8_t lowerTime = 4;
+    uint8_t enableToolLift = 0;
+    uint8_t isRelayActiveHigh = 0; //if zero, active low (default)
+
+    uint8_t user1 = 0; //user defined values set in machine tab
+    uint8_t user2 = 0;
+    uint8_t user3 = 0;
+    uint8_t user4 = 0;
+
+};  Configm aogConfig;   //4 bytes
+
 void steerConfigInit()
 {
   if (steerConfig.CytronDriver) 
@@ -248,13 +262,15 @@ void autosteerSetup()
     EEPROM.put(0, EEP_Ident);
     EEPROM.put(10, steerSettings);
     EEPROM.put(40, steerConfig);
-    EEPROM.put(60, networkAddress);    
+    EEPROM.put(60, networkAddress);
+    EEPROM.get(70, aogConfig);
   }
   else
   {
     EEPROM.get(10, steerSettings);     // read the Settings
     EEPROM.get(40, steerConfig);
-    EEPROM.get(60, networkAddress); 
+    EEPROM.get(60, networkAddress);
+    EEPROM.get(70, aogConfig);
   }
 
   steerSettingsInit();
@@ -763,7 +779,27 @@ void ReceiveUdp()
               SCB_AIRCR = 0x05FA0004; //Teensy Reset
               }
             }//end 201
-
+            else if (autoSteerUdpData[3] == 238)
+                  {
+                      aogConfig.raiseTime = autoSteerUdpData[5];
+                      aogConfig.lowerTime = autoSteerUdpData[6];
+                      aogConfig.enableToolLift = autoSteerUdpData[7];
+      
+                      //set1 
+                      uint8_t sett = autoSteerUdpData[8];  //setting0     
+                      if (bitRead(sett, 0)) aogConfig.isRelayActiveHigh = 1; else aogConfig.isRelayActiveHigh = 0;
+      
+                      aogConfig.user1 = autoSteerUdpData[9];
+                      aogConfig.user2 = autoSteerUdpData[10];
+                      aogConfig.user3 = autoSteerUdpData[11];
+                      aogConfig.user4 = autoSteerUdpData[12];
+      
+                      //crc
+      
+                      //save in EEPROM and restart
+                      EEPROM.put(70, aogConfig);
+                      //resetFunc();
+                  }
             //whoami
             else if (autoSteerUdpData[3] == 202)
             {

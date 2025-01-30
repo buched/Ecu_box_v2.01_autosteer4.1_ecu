@@ -25,6 +25,14 @@
 // CFG-UART2-BAUDRATE 460800
 // Serial 2 In RTCM
 
+//  0 = Claas (1E/30 Navagation Controller, 13/19 Steering Controller) - See Claas Notes on Service Tool Page
+//  1 = Valtra, Massey Fergerson (Standard Danfoss ISO 1C/28 Navagation Controller, 13/19 Steering Controller)
+//  2 = CaseIH, New Holland (AA/170 Navagation Controller, 08/08 Steering Controller)
+//  3 = Fendt (2C/44 Navagation Controller, F0/240 Steering Controller)
+//  4 = JCB (AB/171 Navagation Controller, 13/19 Steering Controller)
+//  5 = FendtOne - Same as Fendt but 500kbs K-Bus.
+uint8_t Brand = 2;  
+
 /************************* User Settings *************************/
 // Serial Ports
 #define SerialAOG Serial                //AgIO USB conection
