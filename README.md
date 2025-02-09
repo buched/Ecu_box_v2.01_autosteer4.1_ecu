@@ -8,6 +8,8 @@ bien placer le pcb dans un endroit ou la température ne monte pas trop, style p
 
 ![5](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/8fee2c60-2fef-41c3-aafd-2ef68b70a2b7)
 
+![mot_elec](https://github.com/user-attachments/assets/e328eef6-a36b-4a75-8f27-ba1dbe9bba11)
+
 Boitier :
 https://fr.aliexpress.com/item/32857771975.html
 
