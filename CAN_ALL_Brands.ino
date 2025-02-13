@@ -18,6 +18,7 @@ void CAN_setup (void) {
           V_Bus.setFIFOFilter(0, 0x14FF7706, EXT);  //CaseIH Engage Message
           V_Bus.setFIFOFilter(1, 0x18FE4523, EXT);  //CaseIH Rear Hitch Infomation
           V_Bus.setFIFOFilter(2, 0x18FF1A03, EXT);  //CaseIH Engage Message
+          V_Bus.setFIFOFilter(3, 0x18FFB031, EXT);  //CaseIH Engage Message
         break;
       case 3:
           V_Bus.setFIFOFilter(0, 0x613, STD);  //Fendt Engage
@@ -72,7 +73,7 @@ CAN_message_t msgi;
         }
       if (Brand == 2)
         {
-          if (msgi.id == 0x14FF7706)   // **edit ID and conditions
+          if (msgi.id == 0x14FF7706)
             {
               if ((msgi.buf[0]) == 130 && (msgi.buf[1]) == 1)
                 {
@@ -95,6 +96,13 @@ CAN_message_t msgi;
                 {
                       eng();
                 }  
+            }
+          if (msgi.id == 0x18FFB031)
+            {
+              if ((msgi.buf[2]) == 0xD0)
+                {
+                  eng();
+                }
             }
         }
       if (Brand == 3)
