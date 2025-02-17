@@ -8,7 +8,11 @@ bien placer le pcb dans un endroit ou la température ne monte pas trop, style p
 
 ![5](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/8fee2c60-2fef-41c3-aafd-2ef68b70a2b7)
 
+exemple de branchement pour moteur électrique 24V :
 ![motelec](https://github.com/user-attachments/assets/a009cd88-7624-40bc-89eb-0f2b0ca277c7)
+
+Exemple de branchement pour valve Hydraulique : 
+![hydrau](https://github.com/user-attachments/assets/61749a5b-8fca-4adf-9f2a-41cb9bd76a38)
 
 
 Boitier :
