@@ -1,5 +1,7 @@
 # Ecu_box_v2.01_autosteer4.1
 
+l'utilisation de ce pcb ainsi que tout ce qui s'y rattache (ino, logiciel, config) sont de votre responsabilité. je ne pourrais être tenu responsable dun quelconque problème, bug, erreur de conception..... il en va de votre responsabilité d'effectuer toutes vérifications préalables.
+
 bien placer le pcb dans un endroit ou la température ne monte pas trop, style pas loin du e ventilation 
 
 ![4](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/601ceffb-bad0-4ff2-9267-419880f9cd88)
