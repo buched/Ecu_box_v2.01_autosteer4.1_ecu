@@ -21,7 +21,7 @@
 /////////////////////////////////////////////
 
 // if not in eeprom, overwrite
-#define EEP_Ident 2400
+#define EEP_Ident 2402
 
 //   ***********  Motor drive connections  **************888
 //Connect ground only for cytron, Connect Ground and +5v for IBT2
@@ -34,7 +34,6 @@
 
 //Not Connected for Cytron, Right PWM for IBT2
 #define PWM2_RPWM  33
-#define PWM2_OPT  37
 
 //--------------------------- Switch Input Pins ------------------------
 #define STEERSW_PIN 6
@@ -53,16 +52,14 @@
 ADS1115_lite adc(ADS1115_DEFAULT_ADDRESS);     // Use this for the 16-bit version ADS1115
 
 #include <IPAddress.h>
-#include "BNO08x_AOG.h"
-#include <FlexCAN_T4.h>
-FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_256> V_Bus;    //Steering Valve Bus
+
 uint32_t Time;                  //Time Arduino has been running
 uint32_t relayTime;             //Time to keep "Button Pressed" from CAN Message
 boolean engageCAN = 0;          //Variable for Engage from CAN
 boolean workCAN = 0;            //Variable for Workswitch from CAN
 uint8_t ISORearHitch = 250;     //Variable for hitch height from ISOBUS (0-250 *0.4 = 0-100%)
 uint8_t KBUSRearHitch = 250;    //Variable for hitch height from KBUS (0-250 *0.4 = 0-100%) - CaseIH tractor bus
-boolean Service = 0;            //Variable for Danfoss Service Tool Mode
+
 boolean ShowCANData = 0;        //Variable for Showing CAN Data
 
 #ifdef ARDUINO_TEENSY41
@@ -173,7 +170,6 @@ void steerConfigInit()
   if (steerConfig.CytronDriver) 
   {
     pinMode(PWM2_RPWM, OUTPUT);
-    pinMode(PWM2_OPT, OUTPUT);
   }
 }
 
@@ -195,19 +191,16 @@ void autosteerSetup()
   {
     analogWriteFrequency(PWM1_LPWM, 490);
     analogWriteFrequency(PWM2_RPWM, 490);
-    analogWriteFrequency(PWM2_OPT, 490);
   }
   else if (PWM_Frequency == 1)
   {
     analogWriteFrequency(PWM1_LPWM, 122);
     analogWriteFrequency(PWM2_RPWM, 122);
-    analogWriteFrequency(PWM2_OPT, 122);
   }
   else if (PWM_Frequency == 2)
   {
     analogWriteFrequency(PWM1_LPWM, 3921);
     analogWriteFrequency(PWM2_RPWM, 3921);
-    analogWriteFrequency(PWM2_OPT, 3921);
   }
 
   //keep pulled high and drag low to activate, noise free safe
@@ -245,7 +238,7 @@ void autosteerSetup()
     EEPROM.put(0, EEP_Ident);
     EEPROM.put(10, steerSettings);
     EEPROM.put(40, steerConfig);
-    EEPROM.put(60, networkAddress);    
+    EEPROM.put(60, networkAddress); 
   }
   else
   {
@@ -274,8 +267,8 @@ void autosteerSetup()
 
   adc.setSampleRate(ADS1115_REG_CONFIG_DR_128SPS); //128 samples per second
   adc.setGain(ADS1115_REG_CONFIG_PGA_6_144V);
-delay(3000);
-CAN_setup();
+  delay (3000);
+  CAN_setup();   //Run the Setup void (CAN page)
 }// End of Setup
 
 void autosteerLoop()
@@ -366,7 +359,7 @@ void autosteerLoop()
           steerSwitch = 1; // reset values like it turned off
           currentState = 1;
           previous = 0;
-         engageCAN = 0;
+        engageCAN = 0;
       }
     }
 
@@ -383,7 +376,7 @@ void autosteerLoop()
           steerSwitch = 1; // reset values like it turned off
           currentState = 1;
           previous = 0;
-         engageCAN = 0;
+          engageCAN = 0;
       }
     }
 
@@ -447,12 +440,10 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 0);
-          digitalWrite(PWM2_OPT, 0);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 1);
-          digitalWrite(PWM2_OPT, 1);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 1);
@@ -476,12 +467,10 @@ void autosteerLoop()
         if (steerConfig.IsRelayActiveHigh)
         {
           digitalWrite(PWM2_RPWM, 1);
-          digitalWrite(PWM2_OPT, 1);
         }
         else
         {
           digitalWrite(PWM2_RPWM, 0);
-          digitalWrite(PWM2_OPT, 0);
         }
       }
       else digitalWrite(DIR1_RL_ENABLE, 0); //IBT2
@@ -533,7 +522,6 @@ void autosteerLoop()
       if ( lastEnc) EncoderFunc();
     }
   }
-VBus_Receive();
 } // end of main loop
 
 int currentRoll = 0;
@@ -740,10 +728,9 @@ void ReceiveUdp()
 
                 SendUdp(helloFromAutoSteer, sizeof(helloFromAutoSteer), Eth_ipDestination, portDestination);
                 }
-                if(useBNO08x || useCMPS)
-                {
+
                  SendUdp(helloFromIMU, sizeof(helloFromIMU), Eth_ipDestination, portDestination); 
-                }
+
             }
 
             else if (autoSteerUdpData[3] == 201)
