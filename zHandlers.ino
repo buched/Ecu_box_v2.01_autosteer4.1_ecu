@@ -60,186 +60,17 @@ void GGA_Handler() //Rec'd GGA
     // time of last DGPS update
     parser.getArg(12, ageDGPS);
 
-//    if (blink)
-//    {
-//        digitalWrite(GGAReceivedLED, HIGH);
-//    }
-//    else
-//    {
-//        digitalWrite(GGAReceivedLED, LOW);
-//    }
-
-    blink = !blink;
     GGA_Available = true;
 
-    if (useDual)
-    {
-       dualReadyGGA = true;
-    }
-
-    if (useBNO08x || useCMPS || useWit)
-    {
        imuHandler();          //Get IMU data ready
        BuildNmea();           //Build & send data GPS data to AgIO (Both Dual & Single)
-       dualReadyGGA = false;  //Force dual GGA ready false because we just sent it to AgIO based off the IMU data
-       if (!useDual)
-       {
-        //digitalWrite(GPSRED_LED, HIGH);    //Turn red GPS LED ON, we have GGA and must have a IMU     
-        //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF     
-       }
-    }
-    else if (!useBNO08x && !useCMPS && !useWit && !useDual) 
-    {
-        //digitalWrite(GPSRED_LED, blink);   //Flash red GPS LED, we have GGA but no IMU or dual
-        //digitalWrite(GPSGREEN_LED, LOW);   //Make sure the Green LED is OFF
-        itoa(65535, imuHeading, 10);       //65535 is max value to stop AgOpen using IMU in Panda
-        BuildNmea();
-    }
-    
-    gpsReadyTime = systick_millis_count;    //Used for GGA timeout (LED's ETC) 
-}
-
-void readBNO()
-{
-          if (bno08x.dataAvailable() == true)
-        {
-            float dqx, dqy, dqz, dqw, dacr;
-            uint8_t dac;
-
-            //get quaternion
-            bno08x.getQuat(dqx, dqy, dqz, dqw, dacr, dac);
-/*            
-            while (bno08x.dataAvailable() == true)
-            {
-                //get quaternion
-                bno08x.getQuat(dqx, dqy, dqz, dqw, dacr, dac);
-                //Serial.println("Whiling");
-                //Serial.print(dqx, 4);
-                //Serial.print(F(","));
-                //Serial.print(dqy, 4);
-                //Serial.print(F(","));
-                //Serial.print(dqz, 4);
-                //Serial.print(F(","));
-                //Serial.println(dqw, 4);
-            }
-            //Serial.println("End of while");
-*/            
-            float norm = sqrt(dqw * dqw + dqx * dqx + dqy * dqy + dqz * dqz);
-            dqw = dqw / norm;
-            dqx = dqx / norm;
-            dqy = dqy / norm;
-            dqz = dqz / norm;
-
-            float ysqr = dqy * dqy;
-
-            // yaw (z-axis rotation)
-            float t3 = +2.0 * (dqw * dqz + dqx * dqy);
-            float t4 = +1.0 - 2.0 * (ysqr + dqz * dqz);
-            yaw = atan2(t3, t4);
-
-            // Convert yaw to degrees x10
-            correctionHeading = -yaw;
-            yaw = (int16_t)((yaw * -RAD_TO_DEG_X_10));
-            if (yaw < 0) yaw += 3600;
-
-            // pitch (y-axis rotation)
-            float t2 = +2.0 * (dqw * dqy - dqz * dqx);
-            t2 = t2 > 1.0 ? 1.0 : t2;
-            t2 = t2 < -1.0 ? -1.0 : t2;
-//            pitch = asin(t2) * RAD_TO_DEG_X_10;
-
-            // roll (x-axis rotation)
-            float t0 = +2.0 * (dqw * dqx + dqy * dqz);
-            float t1 = +1.0 - 2.0 * (dqx * dqx + ysqr);
-//            roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
-
-            if(steerConfig.IsUseY_Axis)
-            {
-              roll = asin(t2) * RAD_TO_DEG_X_10;
-              pitch = atan2(t0, t1) * RAD_TO_DEG_X_10;
-            }
-            else
-            {
-              pitch = asin(t2) * RAD_TO_DEG_X_10;
-              roll = atan2(t0, t1) * RAD_TO_DEG_X_10;
-            }
-            
-            if(invertRoll)
-            {
-              roll *= -1;
-            }
-        }
-}
-
-void readWit()
-{
-        while (SerialWit->available()) 
-          {
-            JY901.CopeSerialData(SerialWit->read()); //Call JY901 data cope function
-          }
-        hwt901Heading = ((float)JY901.stcAngle.Angle[2]/32768*180);
-        hwt901Roll = ((float)JY901.stcAngle.Angle[0]/32768*180);
-        hwt901Heading = -hwt901Heading;
-        
-        if (hwt901Heading < 0 && hwt901Heading >= -180) //Scale BNO085 yaw from [-180°;180°] to [0;360°]
-        {
-          hwt901Heading = hwt901Heading + 360;
-        }
-            
-        yaw = (float)(hwt901Heading) * 10;
-        roll = (float)(hwt901Roll) * 10;
-        Serial.println(roll);
-
+       gpsReadyTime = systick_millis_count;    //Used for GGA timeout (LED's ETC) 
 }
 
 void imuHandler()
 {
     int16_t temp = 0;
-    if (!useDual)
-    {
-        if (useCMPS)
-        {
-            //the heading x10
-            Wire.beginTransmission(CMPS14_ADDRESS);
-            Wire.write(0x1C);
-            Wire.endTransmission();
 
-            Wire.requestFrom(CMPS14_ADDRESS, 3);
-            while (Wire.available() < 3);
-
-            roll = int16_t(Wire.read() << 8 | Wire.read());
-            if (invertRoll)
-            {
-                roll *= -1;
-            }
-
-            // the heading x10
-            Wire.beginTransmission(CMPS14_ADDRESS);
-            Wire.write(0x02);
-            Wire.endTransmission();
-
-            Wire.requestFrom(CMPS14_ADDRESS, 3);
-            while (Wire.available() < 3);
-
-            temp = Wire.read() << 8 | Wire.read();
-            correctionHeading = temp * 0.1;
-            correctionHeading = correctionHeading * DEG_TO_RAD;
-            itoa(temp, imuHeading, 10);
-
-            // 3rd byte pitch
-            int8_t pitch = Wire.read();
-            itoa(pitch, imuPitch, 10);
-
-            // the roll x10
-            temp = (int16_t)roll;
-            itoa(temp, imuRoll, 10);
-
-            // YawRate - 0 for now
-            itoa(0, imuYawRate, 10);
-        }
-
-        if (useBNO08x)
-        {
             //BNO is reading in its own timer    
             // Fill rest of Panda Sentence - Heading
             temp = yaw;
@@ -255,75 +86,14 @@ void imuHandler()
 
             // YawRate - 0 for now
             itoa(0, imuYawRate, 10);
-        }
-
-        if (useWit)
-        {
-            //BNO is reading in its own timer    
-            // Fill rest of Panda Sentence - Heading
-            temp = yaw;
-            itoa(temp, imuHeading, 10);
-
-            // the pitch x10
-            temp = (int16_t)pitch;
-            itoa(temp, imuPitch, 10);
-
-            // the roll x10
-            temp = (int16_t)roll;
-            itoa(temp, imuRoll, 10);
-
-            // YawRate - 0 for now
-            itoa(0, imuYawRate, 10);
-        }
-    }
-
-    // No else, because we want to use dual heading and IMU roll when both connected
-    if (useDual)
-    {
-        // We have a IMU so apply the dual/IMU roll/heading error to the IMU data.
-//        if (useCMPS || useBNO08x)
-//        {
-//            float dualTemp;   //To convert IMU data (x10) to a float for the PAOGI so we have the decamal point
-//                     
-//            // the IMU heading raw
-////            dualTemp = yaw * 0.1;
-////            dtostrf(dualTemp, 3, 1, imuHeading);          
-//
-//            // the IMU heading fused to the dual heading
-//            fuseIMU();
-//            dtostrf(imuCorrected, 3, 1, imuHeading);
-//          
-//            // the pitch
-//            dualTemp = (int16_t)pitch * 0.1;
-//            dtostrf(dualTemp, 3, 1, imuPitch);
-//
-//            // the roll
-//            dualTemp = (int16_t)roll * 0.1;
-//            //If dual heading correction is 90deg (antennas left/right) correct the IMU roll
-//            if(headingcorr == 900)
-//            {
-//              dualTemp += rollDeltaSmooth;
-//            }
-//            dtostrf(dualTemp, 3, 1, imuRoll);
-//
-//        }
-//        else  //No IMU so put dual Heading & Roll in direct.
-        {
-            // the roll
-            dtostrf(rollDual, 4, 2, imuRoll);
-
-            // the Dual heading raw
-            dtostrf(heading, 4, 2, imuHeading);
-        }
-    }
 }
 
 void BuildNmea(void)
 {
     strcpy(nmea, "");
 
-    if (useDual) strcat(nmea, "$PAOGI,");
-    else strcat(nmea, "$PANDA,");
+    
+    strcat(nmea, "$PANDA,");
 
     strcat(nmea, fixTime);
     strcat(nmea, ",");
@@ -382,11 +152,6 @@ void BuildNmea(void)
 
     strcat(nmea, "\r\n");
 
-    if (!passThroughGPS && !passThroughGPS2)
-    {
-        SerialAOG.write(nmea);  //Always send USB GPS data
-    }
-
     if (Ethernet_running)   //If ethernet running send the GPS there
     {
         int len = strlen(nmea);
@@ -425,94 +190,6 @@ void CalculateChecksum(void)
   strcat(nmea, hex2);
 }
 
-/*
-  $PANDA
-  (1) Time of fix
-
-  position
-  (2,3) 4807.038,N Latitude 48 deg 07.038' N
-  (4,5) 01131.000,E Longitude 11 deg 31.000' E
-
-  (6) 1 Fix quality:
-    0 = invalid
-    1 = GPS fix(SPS)
-    2 = DGPS fix
-    3 = PPS fix
-    4 = Real Time Kinematic
-    5 = Float RTK
-    6 = estimated(dead reckoning)(2.3 feature)
-    7 = Manual input mode
-    8 = Simulation mode
-  (7) Number of satellites being tracked
-  (8) 0.9 Horizontal dilution of position
-  (9) 545.4 Altitude (ALWAYS in Meters, above mean sea level)
-  (10) 1.2 time in seconds since last DGPS update
-  (11) Speed in knots
-
-  FROM IMU:
-  (12) Heading in degrees
-  (13) Roll angle in degrees(positive roll = right leaning - right down, left up)
-
-  (14) Pitch angle in degrees(Positive pitch = nose up)
-  (15) Yaw Rate in Degrees / second
-
-  CHKSUM
-*/
-
-/*
-  $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M ,  ,*47
-   0     1      2      3    4      5 6  7  8   9    10 11  12 13  14
-        Time      Lat       Lon     FixSatsOP Alt
-  Where:
-     GGA          Global Positioning System Fix Data
-     123519       Fix taken at 12:35:19 UTC
-     4807.038,N   Latitude 48 deg 07.038' N
-     01131.000,E  Longitude 11 deg 31.000' E
-     1            Fix quality: 0 = invalid
-                               1 = GPS fix (SPS)
-                               2 = DGPS fix
-                               3 = PPS fix
-                               4 = Real Time Kinematic
-                               5 = Float RTK
-                               6 = estimated (dead reckoning) (2.3 feature)
-                               7 = Manual input mode
-                               8 = Simulation mode
-     08           Number of satellites being tracked
-     0.9          Horizontal dilution of position
-     545.4,M      Altitude, Meters, above mean sea level
-     46.9,M       Height of geoid (mean sea level) above WGS84
-                      ellipsoid
-     (empty field) time in seconds since last DGPS update
-     (empty field) DGPS station ID number
-      47          the checksum data, always begins with
-
-
-  $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A
-  0      1    2   3      4    5      6   7     8     9     10   11
-        Time      Lat        Lon       knots  Ang   Date  MagV
-
-  Where:
-     RMC          Recommended Minimum sentence C
-     123519       Fix taken at 12:35:19 UTC
-     A            Status A=active or V=Void.
-     4807.038,N   Latitude 48 deg 07.038' N
-     01131.000,E  Longitude 11 deg 31.000' E
-     022.4        Speed over the ground in knots
-     084.4        Track angle in degrees True
-     230394       Date - 23rd of March 1994
-     003.1,W      Magnetic Variation
-      6A          The checksum data, always begins with
-
-  $GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48
-
-    VTG          Track made good and ground speed
-    054.7,T      True track made good (degrees)
-    034.4,M      Magnetic track made good
-    005.5,N      Ground speed, knots
-    010.2,K      Ground speed, Kilometers per hour
-     48          Checksum
-*/
-
 void VTG_Handler()
 {
   // vtg heading
@@ -520,6 +197,4 @@ void VTG_Handler()
 
   // vtg Speed knots
   parser.getArg(4, speedKnots);
-
-
 }
