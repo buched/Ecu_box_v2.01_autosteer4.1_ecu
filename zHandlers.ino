@@ -152,7 +152,7 @@ void BuildNmea(void)
 
     strcat(nmea, "\r\n");
     
-    Serial.write(nmea);
+    //Serial.write(nmea);
     
     if (Ethernet_running)   //If ethernet running send the GPS there
     {
