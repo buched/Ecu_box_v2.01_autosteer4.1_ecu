@@ -706,36 +706,33 @@ void ReceiveUdp()
             {
                 if(Autosteer_running)
                 {
-                int16_t sa = (int16_t)(steerAngleActual * 100);
-
-                helloFromAutoSteer[5] = (uint8_t)sa;
-                helloFromAutoSteer[6] = sa >> 8;
-
-                helloFromAutoSteer[7] = (uint8_t)helloSteerPosition;
-                helloFromAutoSteer[8] = helloSteerPosition >> 8;
-                helloFromAutoSteer[9] = switchByte;
-
-                SendUdp(helloFromAutoSteer, sizeof(helloFromAutoSteer), Eth_ipDestination, portDestination);
+                  int16_t sa = (int16_t)(steerAngleActual * 100);
+  
+                  helloFromAutoSteer[5] = (uint8_t)sa;
+                  helloFromAutoSteer[6] = sa >> 8;
+  
+                  helloFromAutoSteer[7] = (uint8_t)helloSteerPosition;
+                  helloFromAutoSteer[8] = helloSteerPosition >> 8;
+                  helloFromAutoSteer[9] = switchByte;
+  
+                  SendUdp(helloFromAutoSteer, sizeof(helloFromAutoSteer), Eth_ipDestination, portDestination);
                 }
-
-                 SendUdp(helloFromIMU, sizeof(helloFromIMU), Eth_ipDestination, portDestination); 
-
-            }
-
-            else if (autoSteerUdpData[3] == 201)
-            {
-             //make really sure this is the subnet pgn
-             if (autoSteerUdpData[4] == 5 && autoSteerUdpData[5] == 201 && autoSteerUdpData[6] == 201)
-             {
-              networkAddress.ipOne = autoSteerUdpData[7];
-              networkAddress.ipTwo = autoSteerUdpData[8];
-              networkAddress.ipThree = autoSteerUdpData[9];
-        
-              //save in EEPROM and restart
-              EEPROM.put(60, networkAddress);
-              SCB_AIRCR = 0x05FA0004; //Teensy Reset
+                SendUdp(helloFromIMU, sizeof(helloFromIMU), Eth_ipDestination, portDestination); 
               }
-            }//end 201
+            else if (autoSteerUdpData[3] == 201)
+              {
+               //make really sure this is the subnet pgn
+               if (autoSteerUdpData[4] == 5 && autoSteerUdpData[5] == 201 && autoSteerUdpData[6] == 201)
+               {
+                networkAddress.ipOne = autoSteerUdpData[7];
+                networkAddress.ipTwo = autoSteerUdpData[8];
+                networkAddress.ipThree = autoSteerUdpData[9];
+          
+                //save in EEPROM and restart
+                EEPROM.put(60, networkAddress);
+                SCB_AIRCR = 0x05FA0004; //Teensy Reset
+                }
+              }//end 201
 
             //whoami
             else if (autoSteerUdpData[3] == 202)

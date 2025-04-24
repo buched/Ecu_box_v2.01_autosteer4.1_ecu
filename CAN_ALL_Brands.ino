@@ -15,14 +15,6 @@ vbauds = 250000;
 //---Receive K_Bus message
 void VBus_Receive()
 {
-CAN_message_t msgimu;
-if (V_Bus.read(msgimu)) 
-   {
-    if (msgimu.len == 8 && msgimu.buf[0] == 0x55 && msgimu.buf[1] == 0x53) {
-      decodeFrameCAN(msgimu.buf);
-    }
-   }
-   
 CAN_message_t msgiv;
       if ( V_Bus.read(msgiv) ) 
           {
@@ -34,8 +26,11 @@ CAN_message_t msgiv;
                     engageCAN = 1;
                     relayTime = ((millis() + 1000));
                    }
-
                }
+          }
+          if (msgiv.len == 8 && msgiv.buf[0] == 0x55 && msgiv.buf[1] == 0x53)
+          {
+            decodeFrameCAN(msgiv.buf);
           }
 }
 
