@@ -64,10 +64,12 @@ branchement du bno via le cable pour le positionner à 90 °
 Tips :
 
 depannage ethernet
-sur la centaine de pcb que j'ai vu, c'est le deuxieme qui fini par ne plus fonctionner niveau ethernet. après recherche et tests, il s'avare que les soudures smd de jlcpcb sont limites et le modules ethernet fini par se dessouder
+sur la centaine de pcb que j'ai vu, c'est le deuxieme qui fini par ne plus fonctionner niveau ethernet. après recherche et tests, il s'avère que les soudures smd de jlcpcb sont limites et le module ethernet fini par se dessouder.
+
 pour vérifier :
-tester la continuité en 1/2 et 5/6 : continuité ok = le probleme ne vient pas de ce cas de figure.
-si pas de continuité, tester en 3/4 7/8 : si continuité alors le module est legerement dessoudé
+tester la continuité entre 1/2 et ensuite entre 5/6 : continuité ok = le problème ne vient pas de ce cas de figure.
+si pas de continuité, tester en 3/4 et 7/8 : si continuité, alors le module est légèrement dessoudé.
+
 pour réparer, chauffer le fer et passer rapidement a plat sur tout les contacts et ca devrait suffir
 
 ![depannage ethernet](https://github.com/user-attachments/assets/7dcb6623-f1cb-471e-a1a8-a779aa0a1315)
