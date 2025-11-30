@@ -14,7 +14,8 @@ exemple de branchement pour moteur électrique 24V :
 ![motelec](https://github.com/user-attachments/assets/a009cd88-7624-40bc-89eb-0f2b0ca277c7)
 
 Exemple de branchement pour valve Hydraulique : 
-![hydrau](https://github.com/user-attachments/assets/61749a5b-8fca-4adf-9f2a-41cb9bd76a38)
+<img width="6043" height="1877" alt="hydrauv2" src="https://github.com/user-attachments/assets/80380364-ba15-4236-ad6e-5746f826f9ee" />
+
 
 
 Boitier :
