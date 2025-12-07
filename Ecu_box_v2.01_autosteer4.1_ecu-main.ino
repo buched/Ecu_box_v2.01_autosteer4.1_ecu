@@ -57,6 +57,8 @@ const bool invertRoll= true;  //Used for IMU with dual antenna
 #define REPORT_INTERVAL 20    //BNO report time, we want to keep reading it quick & offen. Its not timmed to anything just give constant data.
 uint32_t READ_BNO_TIME = 0;   //Used stop BNO data pile up (This version is without resetting BNO everytime)
 
+
+uint32_t gpsReadyTime = 0;        //Used for GGA timeout
 /*****************************************************************/
 
 // Ethernet Options (Teensy 4.1 Only)
@@ -655,4 +657,5 @@ void calcChecksum(ubxPacket *msg)
     msg->checksumB += msg->checksumA;
   }
 }
+
 
