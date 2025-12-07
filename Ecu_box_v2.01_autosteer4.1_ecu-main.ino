@@ -1,13 +1,6 @@
 // Single antenna, IMU, & dual antenna code for AgOpenGPS
 // If dual right antenna is for position (must enter this location in AgOpen), left Antenna is for heading & roll
 //
-// connection plan:
-// Teensy Serial 7 RX (28) to F9P Position receiver TX1 (Position data)
-// Teensy Serial 7 TX (29) to F9P Position receiver RX1 (RTCM data for RTK)
-// Teensy Serial 2 RX (7) to F9P Heading receiver TX1 (Relative position from left antenna to right antenna)
-// Teensy Serial 2 TX (8) to F9P Heading receiver RX1
-// F9P Position receiver TX2 to F9P Heading receiver RX2 (RTCM data for Moving Base)
-//
 // Configuration of receiver
 // Position F9P
 // CFG-RATE-MEAS - 100 ms -> 10 Hz
@@ -28,11 +21,9 @@
 /************************* User Settings *************************/
 // Serial Ports
 #define SerialAOG Serial                //AgIO USB conection
-#define SerialRTK Serial7               //RTK radio
 HardwareSerial* SerialGPS = &Serial3;   //Main postion receiver (GGA) (Serial2 must be used here with T4.0 / Basic Panda boards - Should auto swap)
 HardwareSerial* SerialGPS2 = &Serial8;  //Dual heading receiver 
 HardwareSerial* SerialGPSTmp = NULL;
-//HardwareSerial* SerialAOG = &Serial;
 
 const int32_t baudAOG = 115200;
 const int32_t baudGPS = 460800;
@@ -65,24 +56,6 @@ const bool invertRoll= true;  //Used for IMU with dual antenna
 
 #define REPORT_INTERVAL 20    //BNO report time, we want to keep reading it quick & offen. Its not timmed to anything just give constant data.
 uint32_t READ_BNO_TIME = 0;   //Used stop BNO data pile up (This version is without resetting BNO everytime)
-
-//Status LED's
-//#define GGAReceivedLED 13         //Teensy onboard LED
-//#define Power_on_LED 5            //Red
-//#define Ethernet_Active_LED      //Green
-//#define GPSRED_LED 9              //Red (Flashing = NO IMU or Dual, ON = GPS fix with IMU)
-//#define GPSGREEN_LED 10           //Green (Flashing = Dual bad, ON = Dual good)
-//#define AUTOSTEER_STANDBY_LED 11  //Red
-//#define AUTOSTEER_ACTIVE_LED 12   //Green
-uint32_t gpsReadyTime = 0;        //Used for GGA timeout
-
-//for v2.2
-// #define Power_on_LED 22
-// #define Ethernet_Active_LED 23
-// #define GPSRED_LED 20
-// #define GPSGREEN_LED 21
-// #define AUTOSTEER_STANDBY_LED 38
-// #define AUTOSTEER_ACTIVE_LED 39
 
 /*****************************************************************/
 
@@ -164,7 +137,6 @@ uint8_t GPSrxbuffer[serial_buffer_size];    //Extra serial rx buffer
 uint8_t GPStxbuffer[serial_buffer_size];    //Extra serial tx buffer
 uint8_t GPS2rxbuffer[serial_buffer_size];   //Extra serial rx buffer
 uint8_t GPS2txbuffer[serial_buffer_size];   //Extra serial tx buffer
-uint8_t RTKrxbuffer[serial_buffer_size];    //Extra serial rx buffer
 
 /* A parser is declared with 3 handlers at most */
 NMEAParser<2> parser;
@@ -221,18 +193,6 @@ struct ubxPacket
 void setup()
 {
     delay(500);                         //Small delay so serial can monitor start up
-    //set_arm_clock(150000000);           //Set CPU speed to 150mhz
-    //Serial.print("CPU speed set to: ");
-    //Serial.println(F_CPU_ACTUAL);
-
-  //pinMode(GGAReceivedLED, OUTPUT);
-  //pinMode(Power_on_LED, OUTPUT);
-  //pinMode(Ethernet_Active_LED, OUTPUT);
-  //pinMode(GPSRED_LED, OUTPUT);
-  //pinMode(GPSGREEN_LED, OUTPUT);
-  //pinMode(AUTOSTEER_STANDBY_LED, OUTPUT);
-  //(AUTOSTEER_ACTIVE_LED, OUTPUT);
-
   // the dash means wildcard
   parser.setErrorHandler(errorHandler);
   parser.addHandler("G-GGA", GGA_Handler);
@@ -248,15 +208,11 @@ void setup()
   SerialGPS->addMemoryForWrite(GPStxbuffer, serial_buffer_size);
 
   delay(500);
-  SerialRTK.begin(baudRTK);
-  SerialRTK.addMemoryForRead(RTKrxbuffer, serial_buffer_size);
-
-  delay(500);
   SerialGPS2->begin(baudGPS);
   SerialGPS2->addMemoryForRead(GPS2rxbuffer, serial_buffer_size);
   SerialGPS2->addMemoryForWrite(GPS2txbuffer, serial_buffer_size);
 
-  Serial.println("SerialAOG, SerialRTK, SerialGPS and SerialGPS2 initialized");
+  Serial.println("SerialAOG, SerialGPS and SerialGPS2 initialized");
 
   Serial.println("\r\nStarting AutoSteer...");
   autosteerSetup();
@@ -584,12 +540,6 @@ void loop()
 
     udpNtrip();
 
-    // Check for RTK Radio
-    if (SerialRTK.available())
-    {
-        SerialGPS->write(SerialRTK.read());
-    }
-
     // If both dual messages are ready, send to AgOpen
     if (dualReadyGGA == true && dualReadyRelPos == true)
     {
@@ -662,17 +612,7 @@ void loop()
     
     if (Autosteer_running) autosteerLoop();
     else ReceiveUdp();
-    
-  if (Ethernet.linkStatus() == LinkOFF) 
-  {
-//    digitalWrite(Power_on_LED, 1);
-//    digitalWrite(Ethernet_Active_LED, 0);
-  }
-  if (Ethernet.linkStatus() == LinkON) 
-  {
-//    digitalWrite(Power_on_LED, 0);
-//    digitalWrite(Ethernet_Active_LED, 1);
-  }
+
 }//End Loop
 //**************************************************************************
 
@@ -715,3 +655,4 @@ void calcChecksum(ubxPacket *msg)
     msg->checksumB += msg->checksumA;
   }
 }
+
