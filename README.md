@@ -53,9 +53,10 @@ recepteur gps alternatif UM960/980/982
 https://witmotion-sensor.com/products/witmotion-gps-rtk-module-um982-high-precision-centimeter-level-differential-relative-positioning-and-orientation-um960?variant=42873258311877
 
 pour parametrer, injecter le fichier de config joint ici.
-![realterm_um980_1](https://github.com/user-attachments/assets/e561fbf4-f5f8-4c48-97d9-0ce7d011f1ff)
 
-![realterm_um980_2](https://github.com/user-attachments/assets/42df4cac-4799-4bd2-8455-09355cc500be)
+![realterm_um980_1](https://github.com/user-attachments/assets/74fdef0a-22d5-414f-bde7-d0aed58cdad2)
+
+![realterm_um980_2](https://github.com/user-attachments/assets/93a60537-53a4-4bc5-a73b-0d4366f2fc80)
 
 mini pcb additionnel pour ceux ayant besoin d'une sortie relais
 ![photo_2024-04-02_18-50-29](https://github.com/buched/Ecu_box_v2.01_autosteer4.1_ecu/assets/32975584/49fc2de2-048a-42ea-912f-3dd5e917dd23)
